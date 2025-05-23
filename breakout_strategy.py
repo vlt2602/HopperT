@@ -9,11 +9,7 @@ from strategy_logger import log_to_sheet, log_strategy
 from price_watcher import monitor_price_and_sell
 
 # ✅ Khởi tạo binance đúng API key
-binance = ccxt.binance({
-    'apiKey': BINANCE_API_KEY,
-    'secret': BINANCE_SECRET,
-    'enableRateLimit': True
-})
+from binance_handler import binance
 
 MIN_NOTIONAL = 10
 
