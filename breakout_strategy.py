@@ -6,7 +6,7 @@ from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
 
 # ✅ Đã đổi sang import từ file riêng
-from trade_executor import monitor_price_and_sell
+from price_watcher import monitor_price_and_sell
 
 # ✅ Khởi tạo binance đúng API key
 binance = ccxt.binance({
