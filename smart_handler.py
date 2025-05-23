@@ -1,7 +1,8 @@
 import time
 import builtins
 import pandas as pd
-from binance_handler import binance, get_best_symbols, monitor_price_and_sell
+from binance_handler import binance, get_best_symbols
+from trade_executor import monitor_price_and_sell
 from strategy_logger import log_to_sheet
 from logger_helper import send_telegram
 from ai_strategy import select_strategy, select_timeframe, classify_market_state
