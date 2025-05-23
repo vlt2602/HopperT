@@ -22,12 +22,15 @@ def get_best_symbols(limit=3):
             ticker = exchange.fetch_ticker(symbol)
             time.sleep(0.2)  # tránh bị block IP
 
-            if not ohlcv or 'percentage' not in ticker:
+            if not ohlcv:
+                continue
+
+            percent = ticker.get('percentage')
+            if percent is None:
                 continue
 
             volume = ohlcv[-1][5]
-            percent = abs(ticker['percentage'])
-            score = volume * percent
+            score = volume * abs(percent)
             candidates.append((symbol, score))
 
         except Exception as e:
