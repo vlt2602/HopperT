@@ -7,9 +7,6 @@ import pandas as pd
 from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
 
-# ✅ CHỈ import classify_market_state (không import monitor từ ai_strategy nữa)
-from ai_strategy import classify_market_state
-
 # Khởi tạo đối tượng Binance
 binance = ccxt.binance({
     'enableRateLimit': True,
