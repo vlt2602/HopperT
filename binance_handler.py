@@ -1,6 +1,12 @@
 import ccxt
 import time
 
+# ✅ Thêm dòng này vào:
+binance = ccxt.binance({
+    'enableRateLimit': True,
+    'timeout': 10000
+})
+
 # Danh sách các cặp USDT phổ biến để hạn chế API call
 STABLE_PAIRS = [
     "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
