@@ -4,7 +4,7 @@ import pandas as pd
 from binance_handler import binance
 from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
-from ai_strategy import classify_market_state
+from market_classifier import classify_market_state
 
 # Các thông số mặc định
 TIMEFRAME = "5m"
