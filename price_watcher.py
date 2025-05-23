@@ -1,3 +1,5 @@
+# price_watcher.py
+
 from datetime import datetime, timedelta
 import time
 import pandas as pd
@@ -6,7 +8,7 @@ from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
 from market_classifier import classify_market_state
 
-# Các thông số mặc định
+# Tham số điều chỉnh
 TIMEFRAME = "5m"
 SL_MULTIPLIER = 1.5
 TP_MULTIPLIER = 2.0
@@ -30,7 +32,7 @@ def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
     while (datetime.now() - start_time) < timedelta(minutes=5):
         try:
             price = binance.fetch_ticker(symbol)['last']
-            ohlcv_data = binance.fetch_ohlcv(symbol, timeframe='5m', limit=50)
+            ohlcv_data = binance.fetch_ohlcv(symbol, timeframe=TIMEFRAME, limit=50)
             df = pd.DataFrame(ohlcv_data, columns=["timestamp", "open", "high", "low", "close", "volume"])
             market_state = classify_market_state(df)
 
@@ -39,7 +41,7 @@ def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
                 trailing_sl = price - atr * 0.8
                 send_telegram(f"🔁 Trailing Stop kích hoạt tại {price:.2f}")
 
-            if trailing_active and price <= trailing_sl or price >= tp_price or price <= sl_price:
+            if (trailing_active and price <= trailing_sl) or price >= tp_price or price <= sl_price:
                 result = "win" if price >= tp_price or (trailing_active and price <= trailing_sl) else "loss"
                 pnl = (price - entry_price) * qty
 
@@ -48,7 +50,8 @@ def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
                 log_to_sheet(symbol, "SELL", qty, price, strategy, result, round(pnl, 2))
                 log_strategy(symbol, strategy, result, pnl, market_state)
                 return
+
             time.sleep(10)
         except Exception as e:
-            print(f"[Lỗi monitor {symbol}]: {e}")
+            send_telegram(f"❌ Lỗi theo dõi giá {symbol}: {e}")
             time.sleep(5)
