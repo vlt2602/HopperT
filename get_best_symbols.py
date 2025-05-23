@@ -4,23 +4,26 @@ import time
 def get_best_symbols(limit=5):
     exchange = ccxt.binance()
     markets = exchange.load_markets()
-    tickers = exchange.fetch_tickers()
 
     candidates = []
 
-    for symbol, data in tickers.items():
+    for symbol in markets:
         if "/USDT" not in symbol:
             continue
-        if symbol not in markets:
+        if not markets[symbol].get('active', False):
             continue
-        info = markets[symbol]
-        if not info.get('active', False):
-            continue
-        vol = data.get('quoteVolume', 0)
-        percent = abs(data.get('percentage', 0))
-        if vol and percent:
-            score = vol * percent  # volume * biến động
+
+        try:
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe='1h', limit=1)
+            if not ohlcv:
+                continue
+            volume = ohlcv[-1][5]  # cột volume
+            ticker = exchange.fetch_ticker(symbol)
+            percent = abs(ticker.get('percentage', 0))
+            score = volume * percent
             candidates.append((symbol, score))
+        except:
+            continue
 
     candidates.sort(key=lambda x: x[1], reverse=True)
     return [s[0].replace("/", "") for s in candidates[:limit]]
