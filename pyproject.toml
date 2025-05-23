@@ -1,15 +1,20 @@
 [project]
-name = "python-template"
-version = "0.1.0"
+name = "hopper-t"
+version = "1.0.0"
+description = "Fully automated crypto AI trading bot"
+authors = ["Your Name <your@email.com>"]
 requires-python = ">=3.11"
 
 dependencies = [
-    "python-telegram-bot==20.6",
-    "ccxt>=4.4.82",
-    "flask>=3.1.1",
-    "nest-asyncio>=1.6.0",
-    "pandas>=2.2.3",
-    "requests>=2.32.3",
-    "schedule>=1.2.2",
-    "waitress>=3.0.2"
+    "python-telegram-bot==20.6",         # ✅ Telegram Bot API chuẩn mới
+    "ccxt>=4.4.82",                       # ✅ Kết nối Binance
+    "flask>=3.1.1",                       # ✅ Flask để giữ server sống
+    "waitress>=3.0.2",                   # ✅ WSGI server ổn định
+    "nest-asyncio>=1.6.0",               # ✅ Cho phép chạy asyncio lồng
+    "pandas>=2.2.3",                     # ✅ Xử lý dữ liệu nến, indicator
+    "requests>=2.32.3",                  # ✅ Gửi request Telegram, webhook
+    "schedule>=1.2.2"                    # ✅ Lên lịch báo cáo Telegram
 ]
+
+[tool.setuptools]
+packages = ["."]
