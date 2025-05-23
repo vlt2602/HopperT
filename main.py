@@ -1,4 +1,3 @@
-# main.py
 
 import threading
 import asyncio
@@ -13,11 +12,9 @@ from report_scheduler import run_scheduler
 nest_asyncio.apply()
 builtins.bot_active = True
 
-
 # ✅ Chạy Flask server giữ Replit sống
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
-
 
 # ✅ Chạy Scheduler riêng
 def run_scheduler_safe():
@@ -26,11 +23,9 @@ def run_scheduler_safe():
     except Exception as e:
         print("❌ Lỗi scheduler:", e)
 
-
 # ✅ Chạy Telegram + Smart Trade song song
 async def run_async_tasks():
     await asyncio.gather(start_telegram_bot(), smart_trade_loop())
-
 
 # ✅ Chạy tất cả trong các luồng riêng biệt
 if __name__ == "__main__":
