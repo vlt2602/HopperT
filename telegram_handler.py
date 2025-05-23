@@ -1,15 +1,14 @@
-
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes
 )
 from config import TELEGRAM_TOKEN, ALLOWED_CHAT_ID
 import builtins
-import asyncio
+import pandas as pd
 from strategy_metrics import get_strategy_scores
 from balance_helper import get_balance, get_used_capital
-import pandas as pd
 
+# Khởi tạo biến toàn cục
 builtins.panic_mode = False
 builtins.loss_streak = 0
 builtins.capital_limit = 500
@@ -131,7 +130,7 @@ async def pause(update: Update, context: ContextTypes.DEFAULT_TYPE):
     builtins.bot_active = False
     await update.message.reply_text("⏸ Bot đã tạm dừng. Gõ /resume để chạy lại.")
 
-# ✅ SỬA CHUẨN CHO asyncio.gather()
+# ✅ KHỞI CHẠY BOT TELEGRAM (hợp chuẩn v20)
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
@@ -152,6 +151,4 @@ async def start_telegram_bot():
     app.add_handler(CommandHandler("pause", pause))
 
     print("✅ Telegram bot đang chạy...")
-    await app.initialize()
-    await app.start()
-    asyncio.create_task(app.updater.start_polling())
+    await app.run_polling()
