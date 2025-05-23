@@ -1,7 +1,6 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
-
 # ✅ Đọc file log & xử lý bằng pandas
 def read_log():
     try:
@@ -15,7 +14,6 @@ def read_log():
     except Exception as e:
         print(f"Lỗi đọc strategy_log.csv: {e}")
         return pd.DataFrame()
-
 
 # ✅ Tính hiệu suất từng chiến lược
 def get_strategy_scores(days=7):
@@ -57,13 +55,12 @@ def get_strategy_scores(days=7):
             "score": round(score, 2),
             "winrate": round(winrate * 100, 1),
             "pnl": round(pnl, 2),
-            "by_market": by_state  # ← hiệu suất theo thị trường
+            "by_market": by_state
         }
 
     return data
 
-
-# ✅ Dùng để tính vốn động theo chiến lược
+# ✅ Tính vốn động theo chiến lược
 def get_dynamic_usdt_allocation(strategy_name, base_amount=15):
     scores = get_strategy_scores(days=7)
     if strategy_name not in scores:
@@ -76,11 +73,7 @@ def get_dynamic_usdt_allocation(strategy_name, base_amount=15):
     else:
         return base_amount
 
-
 # ✅ Tối ưu vốn theo winrate chiến lược
-# strategy_metrics.py (nâng cấp phần cuối)
-
-
 def get_optimal_usdt_amount(strategy_name, base_usdt=15):
     scores = get_strategy_scores(days=7)
     if strategy_name not in scores:
@@ -89,37 +82,43 @@ def get_optimal_usdt_amount(strategy_name, base_usdt=15):
     winrate = scores[strategy_name]['winrate']
     pnl = scores[strategy_name]['pnl']
 
-    # Mặc định: giữ nguyên
     multiplier = 1.0
-
     if winrate > 75:
         multiplier = 2.0
     elif winrate > 60:
         multiplier = 1.5
     elif winrate < 40 or pnl < 0:
-        multiplier = 0.8  # Giảm vốn nếu hiệu suất kém
+        multiplier = 0.8
 
-    # Nếu chiến lược tốt và gần đây có chuỗi thắng → bonus thêm
     bonus = 1.1 if winrate > 70 and pnl > 10 else 1.0
-
     return round(base_usdt * multiplier * bonus, 2)
+
+# ✅ Dự đoán chiến lược tốt nhất theo trạng thái thị trường
 def predict_best_strategy(current_state: str, current_rsi: float, current_volume: float):
     try:
         df = pd.read_csv("strategy_log.csv", header=None,
                          names=["time", "symbol", "strategy", "market_state", "result", "pnl"])
         df["pnl"] = pd.to_numeric(df["pnl"], errors="coerce")
         df = df.dropna(subset=["pnl"])
-        df = df[df["pnl"] > 0]  # chỉ lấy các giao dịch có lãi
+        df = df[df["pnl"] > 0]
         df = df[df["market_state"] == current_state]
 
         if df.empty:
-            return "breakout"  # fallback nếu không đủ dữ liệu
+            return "breakout"
 
-        # Đếm số lần mỗi chiến lược thành công theo market_state
         strat_stats = df.groupby("strategy")["pnl"].agg(["count", "sum"]).sort_values(by="sum", ascending=False)
-
         best_strategy = strat_stats.index[0]
         return best_strategy
     except Exception as e:
         print(f"[AI Predict] Lỗi phân tích chiến lược: {e}")
         return "breakout"
+
+# ✅ Ghi log chiến lược vào file CSV
+def log_strategy(symbol, strategy, market_state, result, pnl):
+    try:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        row = [now, symbol, strategy, market_state, result, pnl]
+        with open("strategy_log.csv", "a") as f:
+            f.write(",".join(map(str, row)) + "\n")
+    except Exception as e:
+        print(f"Lỗi ghi log chiến lược: {e}")
