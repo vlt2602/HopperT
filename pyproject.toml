@@ -11,6 +11,6 @@ dependencies = [
     "pandas>=2.2.3",
     "requests>=2.32.3",
     "schedule>=1.2.2",
-    "telegram>=0.0.1",
+    "python-telegram-bot==20.6",
     "waitress>=3.0.2",
 ]
