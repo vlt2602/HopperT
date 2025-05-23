@@ -1,13 +1,19 @@
+# binance_handler.py
+
 import ccxt
 import time
+from config import BINANCE_API_KEY, BINANCE_SECRET
+from logger_helper import send_telegram
 
-# Khởi tạo đối tượng Binance
+# ✅ Khởi tạo kết nối Binance duy nhất có API key
 binance = ccxt.binance({
+    'apiKey': BINANCE_API_KEY,
+    'secret': BINANCE_SECRET,
     'enableRateLimit': True,
     'timeout': 10000
 })
 
-# Danh sách các cặp USDT phổ biến để hạn chế API call
+# ✅ Danh sách các cặp USDT phổ biến (lọc trước để tránh gọi quá nhiều)
 STABLE_PAIRS = [
     "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
     "DOGE/USDT", "ADA/USDT", "MATIC/USDT", "DOT/USDT", "AVAX/USDT",
@@ -15,8 +21,14 @@ STABLE_PAIRS = [
     "LINK/USDT", "ATOM/USDT", "APT/USDT", "NEAR/USDT", "FIL/USDT"
 ]
 
+# ✅ Lọc top coin tốt nhất theo volume * biến động %
 def get_best_symbols(limit=3):
-    markets = binance.load_markets()
+    try:
+        markets = binance.load_markets()
+    except Exception as e:
+        send_telegram(f"❌ Lỗi load markets: {e}")
+        return []
+
     candidates = []
 
     for symbol in STABLE_PAIRS:
@@ -36,7 +48,7 @@ def get_best_symbols(limit=3):
             candidates.append((symbol, score))
 
         except Exception as e:
-            print(f"Lỗi khi lấy dữ liệu {symbol}: {e}")
+            print(f"⚠️ Lỗi dữ liệu {symbol}: {e}")
             continue
 
     candidates.sort(key=lambda x: x[1], reverse=True)
