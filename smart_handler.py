@@ -2,10 +2,11 @@ import time
 import builtins
 import pandas as pd
 from binance_handler import binance, get_best_symbols, monitor_price_and_sell
-from strategy_logger import log_to_sheet, log_strategy
+from strategy_logger import log_to_sheet
 from logger_helper import send_telegram
-from ai_strategy import select_strategy, select_timeframe
+from ai_strategy import select_strategy, select_timeframe, classify_market_state
 from risk_manager import check_daily_loss
+from strategy_metrics import get_strategy_scores, get_optimal_usdt_amount
 
 def smart_trade_loop():
     while True:
@@ -35,8 +36,6 @@ def smart_trade_loop():
                 df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
 
                 selected_strategy = select_strategy(df)
-                from strategy_metrics import get_strategy_scores
-
                 scores_3d = get_strategy_scores(days=3)
                 score_info = scores_3d.get(selected_strategy, {})
 
@@ -49,8 +48,8 @@ def smart_trade_loop():
 
                 balance = binance.fetch_balance()['USDT']['free']
                 price = binance.fetch_ticker(symbol)['last']
-                from strategy_metrics import get_optimal_usdt_amount
                 amount_usdt = min(get_optimal_usdt_amount(selected_strategy), balance)
+
                 if amount_usdt < 10:
                     print(f"⚠️ {symbol} không đủ vốn để khớp lệnh.")
                     continue
@@ -73,12 +72,7 @@ def smart_trade_loop():
 
         try:
             market_state = classify_market_state(df)
-            if market_state == "trend":
-                delay = 30
-            elif market_state == "sideway":
-                delay = 90
-            else:
-                delay = 120
+            delay = 30 if market_state == "trend" else 90 if market_state == "sideway" else 120
         except:
             delay = 60
 
