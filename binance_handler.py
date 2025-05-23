@@ -1,5 +1,3 @@
-# binance_handler.py
-
 import ccxt, time
 from datetime import datetime, timedelta
 from config import (BINANCE_API_KEY, BINANCE_SECRET, TRADE_SYMBOLS,
@@ -9,6 +7,7 @@ from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
 import builtins
 from strategy_metrics import get_dynamic_usdt_allocation
+from get_best_symbols import get_best_symbols
 
 # Trạng thái toàn cục
 builtins.capital_limit = CAPITAL_LIMIT
@@ -33,11 +32,6 @@ TIMEFRAME = '5m'
 SL_MULTIPLIER = 1.5
 TP_MULTIPLIER = 2.0
 TRAILING_TRIGGER = 0.5
-
-def get_best_symbols():
-    print("⚙️ Bỏ qua lọc, test trực tiếp ETH/USDT")
-    send_telegram("⚙️ Test trực tiếp với ETH/USDT")
-    return ["ETH/USDT"]
 
 def calculate_atr(symbol):
     ohlcv = binance.fetch_ohlcv(symbol, timeframe=TIMEFRAME, limit=14)
