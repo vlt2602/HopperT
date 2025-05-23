@@ -77,6 +77,8 @@ def smart_trade_loop():
                                        qty,
                                        price,
                                        strategy=selected_strategy)
+                from risk_manager import check_daily_loss
+check_daily_loss()
 
                 time.sleep(2)
 
