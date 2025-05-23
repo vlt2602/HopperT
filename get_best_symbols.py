@@ -35,7 +35,7 @@ def get_best_symbols(limit=3):
             continue
 
     candidates.sort(key=lambda x: x[1], reverse=True)
-    return [s[0].replace("/", "") for s in candidates[:limit]]
+    return [s[0] for s in candidates[:limit]]
 
 if __name__ == "__main__":
     print("Top coin đề xuất:")
