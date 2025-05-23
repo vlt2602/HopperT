@@ -1,6 +1,7 @@
 # ai_strategy.py
 
-from strategy_metrics import get_strategy_scores
+import pandas as pd
+from strategy_metrics import get_strategy_scores, predict_best_strategy
 from signal_checker import check_rsi_signal
 from breakout_strategy import check_breakout_signal
 from scalping_strategy import check_scalping_signal
@@ -9,14 +10,10 @@ from reversal_strategy import check_reversal_signal
 from macd_strategy import check_macd_signal
 from bollinger_strategy import check_bollinger_signal
 from vwap_strategy import check_vwap_signal
-from strategy_metrics import get_strategy_scores
-from binance_handler import binance
-import pandas as pd
-from signal_checker import check_rsi_signal
 from indicator_helper import calculate_rsi
+from binance_handler import binance
 
-
-# ✅ TỰ CHỌN CHIẾN LƯỢC THEO AI + THỊ TRƯỜNG + HIỆU SUẤT
+# ✅ TỰ CHỌN CHIẾN LƯỢC TỐI ƯU THEO AI + HIỆU SUẤT + THỊ TRƯỜNG
 def select_strategy(df):
     scores = get_strategy_scores(days=7)
     if not scores:
@@ -24,7 +21,6 @@ def select_strategy(df):
 
     market_state = classify_market_state(df)
 
-    # Ưu tiên chiến lược có hiệu suất cao nhất trong trạng thái thị trường hiện tại
     strat_ranked = []
     for name, data in scores.items():
         market_pnl = data.get("by_market", {}).get(market_state, -9999)
@@ -33,7 +29,7 @@ def select_strategy(df):
     strat_ranked = sorted(strat_ranked, key=lambda x: x[1], reverse=True)
     best_for_market = strat_ranked[0][0] if strat_ranked else "breakout"
 
-    # Kiểm tra tín hiệu kỹ thuật thật sự có hợp lý không
+    # Xác thực có tín hiệu kỹ thuật thực sự
     signal_checks = {
         "trend": check_trend_signal(df),
         "scalping": check_scalping_signal(df),
@@ -44,30 +40,25 @@ def select_strategy(df):
         "vwap": check_vwap_signal(df)
     }
 
-    if best_for_market in signal_checks and signal_checks[best_for_market]:
+    if signal_checks.get(best_for_market):
         return best_for_market
 
-    # Fallback nếu không có tín hiệu rõ → chọn chiến lược tốt nhất toàn cục
+    # Nếu không có tín hiệu rõ ràng → fallback theo hiệu suất
     valid = {
-        name: data
-        for name, data in scores.items()
+        name: data for name, data in scores.items()
         if data["winrate"] >= 40 and data["pnl"] > 0
     }
-    preferred = sorted(valid.items(),
-                       key=lambda x: x[1]["score"],
-                       reverse=True)
+
+    preferred = sorted(valid.items(), key=lambda x: x[1]["score"], reverse=True)
     if preferred:
         return preferred[0][0]
     else:
         try:
             rsi_value = calculate_rsi(df["close"].tolist())
             volume_now = df["volume"].iloc[-1]
-            from strategy_metrics import predict_best_strategy
-            predicted = predict_best_strategy(market_state, rsi_value, volume_now)
-            return predicted
+            return predict_best_strategy(market_state, rsi_value, volume_now)
         except:
             return "breakout"
-
 
 # ✅ PHÂN LOẠI TRẠNG THÁI THỊ TRƯỜNG: Trend / Sideway / Volatile
 def classify_market_state(df):
@@ -80,25 +71,19 @@ def classify_market_state(df):
     volume_now = df['volume'].iloc[-1]
     volume_avg = df['volume'].rolling(window=10).mean().iloc[-1]
 
-    # ===== THỊ TRƯỜNG TĂNG MẠNH =====
     if ema_diff > 0.5 and volatility < 0.015 and df['rsi'].iloc[-1] > 55 and volume_now > volume_avg:
         return "trend"
 
-    # ===== SIDEWAY =====
     if abs(ema_diff) < 0.2 and volatility < 0.008 and 45 <= df['rsi'].iloc[-1] <= 55:
         return "sideway"
 
-    # ===== BIẾN ĐỘNG CAO / RỦI RO =====
     return "volatile"
 
-
-# ✅ TỰ CHỌN TIMEFRAME: 1m / 5m / 15m
+# ✅ TỰ CHỌN TIMEFRAME: 1m / 5m / 15m theo độ biến động
 def select_timeframe(symbol):
     try:
         ohlcv = binance.fetch_ohlcv(symbol, timeframe="15m", limit=30)
-        df = pd.DataFrame(
-            ohlcv,
-            columns=["timestamp", "open", "high", "low", "close", "volume"])
+        df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
         df['returns'] = df['close'].pct_change()
         volatility = df['returns'].rolling(window=10).std().iloc[-1]
 
