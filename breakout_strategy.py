@@ -1,12 +1,12 @@
-# breakout_strategy.py
-
 import time
 import ccxt
 import builtins
 from config import FIXED_USDT_PER_ORDER, BINANCE_API_KEY, BINANCE_SECRET
 from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
-from binance_handler import monitor_price_and_sell
+
+# ✅ Đã đổi sang import từ file riêng
+from trade_executor import monitor_price_and_sell
 
 # ✅ Khởi tạo binance đúng API key
 binance = ccxt.binance({
@@ -17,22 +17,18 @@ binance = ccxt.binance({
 
 MIN_NOTIONAL = 10
 
-
 def is_breakout(symbol):
     try:
         ohlcv = binance.fetch_ohlcv(symbol, timeframe='5m', limit=6)
         highs = [candle[2] for candle in ohlcv[:-1]]
         current_close = ohlcv[-1][4]
         avg_high = sum(highs) / len(highs)
-        return current_close > max(highs) and (current_close -
-                                               avg_high) / avg_high > 0.01
+        return current_close > max(highs) and (current_close - avg_high) / avg_high > 0.01
     except:
         return False
 
-
 def run_breakout_strategy(strategy_name="breakout"):
-    symbols = builtins.TRADE_SYMBOLS if hasattr(
-        builtins, 'TRADE_SYMBOLS') else ["BTC/USDT", "ETH/USDT"]
+    symbols = builtins.TRADE_SYMBOLS if hasattr(builtins, 'TRADE_SYMBOLS') else ["BTC/USDT", "ETH/USDT"]
     for symbol in symbols:
         try:
             balance = binance.fetch_balance()['USDT']['free']
@@ -48,14 +44,11 @@ def run_breakout_strategy(strategy_name="breakout"):
                 price = ticker['last']
                 qty = round(amount_usdt / price, 5)
 
-                order = binance.create_market_buy_order(symbol, qty)
+                binance.create_market_buy_order(symbol, qty)
                 entry_price = price
 
-                send_telegram(
-                    f"🚀 Breakout Signal! Mua {symbol} {qty} tại {entry_price:.2f}"
-                )
-                log_to_sheet(symbol, "BUY", qty, entry_price, strategy_name,
-                             "pending", 0)
+                send_telegram(f"🚀 Breakout Signal! Mua {symbol} {qty} tại {entry_price:.2f}")
+                log_to_sheet(symbol, "BUY", qty, entry_price, strategy_name, "pending", 0)
                 builtins.capital_limit -= amount_usdt
 
                 monitor_price_and_sell(symbol, qty, entry_price, strategy_name)
@@ -64,13 +57,9 @@ def run_breakout_strategy(strategy_name="breakout"):
         except Exception as e:
             send_telegram(f"❌ Breakout lỗi {symbol}: {e}")
 
-
 def check_breakout_signal(df):
-    # Kiểm tra nến breakout: giá đóng gần đỉnh trong 6 nến gần nhất
     highs = df['high'].tolist()
     closes = df['close'].tolist()
     recent_high = max(highs[-6:])
     recent_close = closes[-1]
-
-    # Nếu close > 98% của high gần nhất => breakout
     return recent_close >= 0.98 * recent_high
