@@ -1,5 +1,3 @@
-# smart_handler.py
-
 import time
 import builtins
 import pandas as pd
@@ -7,7 +5,7 @@ from binance_handler import binance, get_best_symbols, monitor_price_and_sell
 from strategy_logger import log_to_sheet, log_strategy
 from logger_helper import send_telegram
 from ai_strategy import select_strategy, select_timeframe
-
+from risk_manager import check_daily_loss
 
 def smart_trade_loop():
     while True:
@@ -34,7 +32,6 @@ def smart_trade_loop():
 
                 print(f"✅ Đã fetch xong dữ liệu {symbol}")
                 send_telegram(f"✅ Lấy xong dữ liệu nến {symbol}")
-                # ✅ Tạm bỏ qua fetch ohlcv để ép chạy tiếp
                 df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
 
                 # ====== AI CHỌN CHIẾN LƯỢC DỰA TRÊN DỮ LIỆU ======
@@ -57,8 +54,7 @@ def smart_trade_loop():
                 balance = binance.fetch_balance()['USDT']['free']
                 price = binance.fetch_ticker(symbol)['last']
                 from strategy_metrics import get_optimal_usdt_amount
-                amount_usdt = min(get_optimal_usdt_amount(selected_strategy),
-                                  balance)
+                amount_usdt = min(get_optimal_usdt_amount(selected_strategy), balance)
                 if amount_usdt < 10:
                     print(f"⚠️ {symbol} không đủ vốn để khớp lệnh.")
                     continue
@@ -66,19 +62,17 @@ def smart_trade_loop():
                 qty = round(amount_usdt / price, 5)
                 binance.create_market_buy_order(symbol, qty)
 
-                send_telegram(
-                    f"✅ Đã mua {symbol} {qty} với {amount_usdt:.2f} USDT tại {price:.2f}"
-                )
-                log_to_sheet(symbol, "BUY", qty, price, selected_strategy,
-                             "pending", 0)
+                send_telegram(f"✅ Đã mua {symbol} {qty} với {amount_usdt:.2f} USDT tại {price:.2f}")
+                log_to_sheet(symbol, "BUY", qty, price, selected_strategy, "pending", 0)
 
                 # ====== THEO DÕI VÀ BÁN THEO CHIẾN LƯỢC ======
-                monitor_price_and_sell(symbol,
-                                       qty,
-                                       price,
-                                       strategy=selected_strategy)
-                from risk_manager import check_daily_loss
-check_daily_loss()
+                try:
+                    monitor_price_and_sell(symbol, qty, price, strategy=selected_strategy)
+                except Exception as e:
+                    send_telegram(f"❌ Lỗi khi theo dõi và bán: {e}")
+
+                # ✅ Kiểm tra lỗ trong ngày
+                check_daily_loss()
 
                 time.sleep(2)
 
@@ -99,4 +93,3 @@ check_daily_loss()
 
         print(f"⏳ Chờ {delay} giây trước lần giao dịch tiếp theo...")
         time.sleep(delay)
-
