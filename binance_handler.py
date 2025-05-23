@@ -1,9 +1,13 @@
+# binance_handler.py
+
 import ccxt
 import time
 from datetime import datetime, timedelta
 import pandas as pd
 from logger_helper import send_telegram
 from strategy_logger import log_to_sheet, log_strategy
+
+# ✅ CHỈ import classify_market_state (không import monitor từ ai_strategy nữa)
 from ai_strategy import classify_market_state
 
 # Khởi tạo đối tượng Binance
@@ -12,7 +16,7 @@ binance = ccxt.binance({
     'timeout': 10000
 })
 
-# Danh sách các cặp USDT phổ biến để hạn chế API call
+# Danh sách các cặp USDT phổ biến
 STABLE_PAIRS = [
     "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT",
     "DOGE/USDT", "ADA/USDT", "MATIC/USDT", "DOT/USDT", "AVAX/USDT",
@@ -39,7 +43,6 @@ def get_best_symbols(limit=3):
             percent = abs(ticker['percentage'])
             score = volume * percent
             candidates.append((symbol, score))
-
         except Exception as e:
             print(f"Lỗi khi lấy dữ liệu {symbol}: {e}")
             continue
@@ -47,8 +50,7 @@ def get_best_symbols(limit=3):
     candidates.sort(key=lambda x: x[1], reverse=True)
     return [s[0] for s in candidates[:limit]]
 
-# === Monitor and bán coin ===
-
+# === Theo dõi và bán coin ===
 TIMEFRAME = "5m"
 SL_MULTIPLIER = 1.5
 TP_MULTIPLIER = 2.0
