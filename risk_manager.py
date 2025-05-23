@@ -2,9 +2,7 @@ import pandas as pd
 from datetime import datetime
 import builtins
 from logger_helper import send_telegram
-
-# Giới hạn lỗ trong ngày (có thể điều chỉnh)
-DAILY_MAX_LOSS = -50
+from config import DAILY_MAX_LOSS  # ✅ dùng từ config chuẩn
 
 def check_daily_loss():
     try:
