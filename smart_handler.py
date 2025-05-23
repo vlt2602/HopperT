@@ -17,24 +17,23 @@ def smart_trade_loop():
         print("🤖 Bắt đầu vòng lặp giao dịch thông minh...")
         send_telegram("🤖 Đã bắt đầu vòng lặp giao dịch thông minh...")
 
-        for symbol in get_best_symbols():
+        symbols = get_best_symbols()
+        print("📈 Top coin hiện tại:", symbols)
+        send_telegram(f"📈 Đang xét các coin: {', '.join(symbols)}")
+
+        for symbol in symbols:
             print(f"🔁 Bắt đầu xử lý symbol: {symbol}")
             send_telegram(f"🔁 Bắt đầu xử lý symbol: {symbol}")
             try:
-                # ====== CHỌN TIMEFRAME THEO BIẾN ĐỘNG ======
                 timeframe = select_timeframe(symbol)
-
-                # ====== LẤY DỮ LIỆU NẾN THEO TIMEFRAME ======
                 print(f"📥 Fetch dữ liệu nến {symbol} | TF: {timeframe}")
                 send_telegram(f"📥 Đang lấy dữ liệu nến {symbol} – {timeframe}")
-
                 ohlcv = binance.fetch_ohlcv(symbol, timeframe=timeframe, limit=50)
 
                 print(f"✅ Đã fetch xong dữ liệu {symbol}")
                 send_telegram(f"✅ Lấy xong dữ liệu nến {symbol}")
                 df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
 
-                # ====== AI CHỌN CHIẾN LƯỢC DỰA TRÊN DỮ LIỆU ======
                 selected_strategy = select_strategy(df)
                 from strategy_metrics import get_strategy_scores
 
@@ -46,11 +45,8 @@ def smart_trade_loop():
                     send_telegram(f"🚫 Bỏ qua {symbol} – Winrate {selected_strategy} < 40% (cooldown)")
                     continue
 
-                send_telegram(
-                    f"🤖 {symbol} | Timeframe: {timeframe} | Chiến lược: {selected_strategy}"
-                )
+                send_telegram(f"🤖 {symbol} | Timeframe: {timeframe} | Chiến lược: {selected_strategy}")
 
-                # ====== TÍNH VỐN VÀ VÀO LỆNH ======
                 balance = binance.fetch_balance()['USDT']['free']
                 price = binance.fetch_ticker(symbol)['last']
                 from strategy_metrics import get_optimal_usdt_amount
@@ -61,25 +57,20 @@ def smart_trade_loop():
 
                 qty = round(amount_usdt / price, 5)
                 binance.create_market_buy_order(symbol, qty)
-
                 send_telegram(f"✅ Đã mua {symbol} {qty} với {amount_usdt:.2f} USDT tại {price:.2f}")
                 log_to_sheet(symbol, "BUY", qty, price, selected_strategy, "pending", 0)
 
-                # ====== THEO DÕI VÀ BÁN THEO CHIẾN LƯỢC ======
                 try:
                     monitor_price_and_sell(symbol, qty, price, strategy=selected_strategy)
                 except Exception as e:
                     send_telegram(f"❌ Lỗi khi theo dõi và bán: {e}")
 
-                # ✅ Kiểm tra lỗ trong ngày
                 check_daily_loss()
-
                 time.sleep(2)
 
             except Exception as e:
                 send_telegram(f"❌ Lỗi xử lý {symbol}: {e}")
 
-        # === Điều chỉnh tần suất giao dịch theo thị trường ===
         try:
             market_state = classify_market_state(df)
             if market_state == "trend":
