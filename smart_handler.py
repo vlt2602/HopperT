@@ -5,7 +5,8 @@ from binance_handler import binance, get_best_symbols
 from price_watcher import monitor_price_and_sell
 from strategy_logger import log_to_sheet
 from logger_helper import send_telegram
-from ai_strategy import select_strategy, select_timeframe, classify_market_state
+from ai_strategy import select_strategy, select_timeframe
+from market_classifier import classify_market_state
 from risk_manager import check_daily_loss
 from strategy_metrics import get_strategy_scores, get_optimal_usdt_amount
 
