@@ -10,7 +10,6 @@ from strategy_metrics import get_strategy_scores
 from balance_helper import get_balance, get_used_capital
 import pandas as pd
 
-# ====== Biến toàn cục ======
 builtins.panic_mode = False
 builtins.loss_streak = 0
 builtins.capital_limit = 500
@@ -18,7 +17,6 @@ builtins.capital_limit_init = 500
 builtins.bot_active = True
 builtins.last_order = None
 
-# ====== Các lệnh cơ bản ======
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
     state = "🟢 ĐANG CHẠY" if builtins.bot_active else "🔴 ĐANG DỪNG"
@@ -67,9 +65,7 @@ async def strategy(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     lines = ["📊 Hiệu suất chiến lược 7 ngày:"]
     for name, s in scores.items():
-        lines.append(
-            f"• {name}: {s['winrate']}% | {s['pnl']} USDT | score={s['score']}"
-        )
+        lines.append(f"• {name}: {s['winrate']}% | {s['pnl']} USDT | score={s['score']}")
     await update.message.reply_text("\n".join(lines))
 
 async def lastorder(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -81,7 +77,6 @@ async def report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
     await update.message.reply_text("📅 Báo cáo tự động lúc 05:00 hàng ngày & 05:01 Chủ nhật.")
 
-# ====== Vốn nâng cao ======
 async def addcapital(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
     builtins.capital_limit += 100
@@ -100,7 +95,6 @@ async def resetcapital(update: Update, context: ContextTypes.DEFAULT_TYPE):
     builtins.capital_limit_init = 500
     await update.message.reply_text("🔁 Reset vốn về mặc định: 500 USDT")
 
-# ====== Menu mini app Telegram ======
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
     buttons = [["/status", "/toggle", "/resume", "/pause"],
@@ -110,7 +104,6 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     markup = ReplyKeyboardMarkup(buttons, resize_keyboard=True)
     await update.message.reply_text("📋 Menu điều khiển HopperT:", reply_markup=markup)
 
-# ====== Các tiện ích khác ======
 async def top(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
     try:
@@ -138,10 +131,8 @@ async def pause(update: Update, context: ContextTypes.DEFAULT_TYPE):
     builtins.bot_active = False
     await update.message.reply_text("⏸ Bot đã tạm dừng. Gõ /resume để chạy lại.")
 
-# ====== Khởi động bot chính ======
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-
     app.add_handler(CommandHandler("status", status))
     app.add_handler(CommandHandler("resume", resume))
     app.add_handler(CommandHandler("toggle", toggle))
@@ -157,6 +148,5 @@ async def start_telegram_bot():
     app.add_handler(CommandHandler("top", top))
     app.add_handler(CommandHandler("resetlog", resetlog))
     app.add_handler(CommandHandler("pause", pause))
-
     print("✅ Telegram bot đang chạy...")
     await app.run_polling()
