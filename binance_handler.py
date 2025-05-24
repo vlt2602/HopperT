@@ -22,7 +22,7 @@ STABLE_PAIRS = [
 ]
 
 # ✅ Lọc top coin tốt nhất theo volume * biến động %
-async def get_best_symbols(limit=3):
+def get_best_symbols(limit=3):
     try:
         markets = await asyncio.to_thread(binance.load_markets)
     except Exception as e:
