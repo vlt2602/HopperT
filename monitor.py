@@ -1,7 +1,7 @@
 import threading
 import time
 import builtins
-from logger import log_error, log_info
+from logger_helper import log_info, log_error
 
 def monitor_bot():
     while True:
