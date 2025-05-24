@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 import os
-from logger import log_info
+from logger_helper import log_info, log_error
 
 winrate_file = "winrate_log.json"
 
