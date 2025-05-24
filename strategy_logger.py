@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 from config import USE_GOOGLE_SHEET, SHEET_WEBHOOK
 import requests
-
+from logger import log_error, log_info
 
 def log_to_sheet(symbol,
                  side,
@@ -28,9 +28,9 @@ def log_to_sheet(symbol,
                 "PnL": pnl
             }
             requests.post(SHEET_WEBHOOK, json=payload)
+            log_info(f"Đã log Google Sheet: {symbol} | {strategy} | {result} | PnL: {pnl}")
         except Exception as e:
-            print("Lỗi gửi Google Sheet:", e)
-
+            log_error(f"Lỗi gửi Google Sheet: {e}")
 
 def log_strategy(symbol, strategy, result, pnl, market_state="unknown"):
     try:
@@ -41,5 +41,6 @@ def log_strategy(symbol, strategy, result, pnl, market_state="unknown"):
                 market_state, result,
                 round(pnl, 2)
             ])
+        log_info(f"Đã ghi strategy_log: {symbol} | {strategy} | {result} | PnL: {pnl}")
     except Exception as e:
-        print("Lỗi ghi strategy_log.csv:", e)
+        log_error(f"Lỗi ghi strategy_log.csv: {e}")
