@@ -3,7 +3,7 @@
 import time
 import builtins
 from config import FIXED_USDT_PER_ORDER
-from logger import log_info, log_error
+from logger_helper import log_info, log_error
 from strategy_logger import log_to_sheet, log_strategy
 from binance_handler import binance
 from price_watcher import monitor_price_and_sell
