@@ -1,4 +1,5 @@
 # market_classifier.py
+from logger import log_info, log_error
 
 def classify_market_state(df):
     try:
@@ -15,14 +16,18 @@ def classify_market_state(df):
 
         # ===== THỊ TRƯỜNG CÓ XU HƯỚNG MẠNH (Trend) =====
         if range_ > avg_body * 2.5 and volatility > 0.01 and volume_now > volume_avg:
+            log_info("Phân loại thị trường: Trend mạnh")
             return "trend"
 
         # ===== SIDEWAY (ít biến động, biên hẹp) =====
         if range_ < avg_body * 1.2 and volatility < 0.008:
+            log_info("Phân loại thị trường: Sideway")
             return "sideway"
 
         # ===== KHÓ XÁC ĐỊNH / DAO ĐỘNG MẠNH (Biến động cao) =====
+        log_info("Phân loại thị trường: Volatile")
         return "volatile"
+
     except Exception as e:
-        print(f"[Classifier] Lỗi xác định thị trường: {e}")
+        log_error(f"[Classifier] Lỗi xác định thị trường: {e}")
         return "unclear"
