@@ -23,6 +23,12 @@ def send_alert(message):
     except Exception as e:
         print(f"❌ Lỗi gửi tin Telegram: {e}")
 
+def send_summary(skipped_coins):
+    if skipped_coins:
+        coins_list = ', '.join(skipped_coins)
+        message = f"🚫 Bỏ qua các cặp coin do winrate thấp: {coins_list}"
+        send_alert(message)
+
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID:
         return
@@ -110,8 +116,7 @@ async def resetlog(update, context):
     await update.effective_chat.send_message("🗑 Đã reset log chiến lược.")
 
 async def checklogs(update, context):
-    await update.effective_chat.send_message("📋 Đang kiểm tra log hệ thống...")
-    # TODO: Đọc file log deploy hoặc API logs và gửi về Telegram
+    await update.effective_chat.send_message("📋 Đang kiểm tra log hệ thống... (chưa triển khai)")
 
 async def resume(update, context):
     builtins.panic_mode = False
@@ -122,7 +127,6 @@ async def setcapital(update, context):
     await update.effective_chat.send_message("❓ Dùng lệnh /setcapital [số] để đặt vốn tùy chỉnh.")
 
 async def todayorders(update, context):
-    # TODO: Lọc file log hoặc database để lấy danh sách lệnh hôm nay
     await update.effective_chat.send_message("📋 Danh sách lệnh hôm nay:\n(Chưa triển khai)")
 
 async def report24h(update, context):
