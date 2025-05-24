@@ -4,11 +4,11 @@ import schedule
 import time
 import pandas as pd
 from datetime import datetime, timedelta
+from logger import log_info, log_error
+from report_helper import log_daily_report, send_uptime_report
 from logger_helper import send_telegram
-from report_helper import log_daily_report, send_uptime_report  # ✅ THÊM
 
 LOG_FILE = "strategy_log.csv"
-
 
 def read_log():
     try:
@@ -18,9 +18,8 @@ def read_log():
         df["time"] = pd.to_datetime(df["time"])
         return df
     except Exception as e:
-        print(f"[Báo cáo] Không thể đọc file log: {e}")
+        log_error(f"[Báo cáo] Không thể đọc file log: {e}")
         return pd.DataFrame()
-
 
 def summarize(df, start, end):
     df_range = df[(df["time"] >= start) & (df["time"] < end)]
@@ -50,7 +49,6 @@ def summarize(df, start, end):
         f"\n🏆 Chiến lược tốt nhất: {best['strategy']} ({best['pnl']:.2f} USDT)"
     ])
     return message
-
 
 def daily_report():
     now = datetime.now()
@@ -82,8 +80,7 @@ def daily_report():
     try:
         log_daily_report()
     except Exception as e:
-        print("[Lỗi gửi Google Sheets]:", e)
-
+        log_error(f"[Lỗi gửi Google Sheets]: {e}")
 
 def weekly_report():
     now = datetime.now()
@@ -93,17 +90,15 @@ def weekly_report():
     msg = summarize(df, start, end)
     send_telegram("🗓️ Báo cáo tuần:\n" + msg)
 
-
 def run_scheduler():
     schedule.every().day.at("05:00").do(daily_report)
-    schedule.every().day.at("06:00").do(send_uptime_report)  # ✅ UPTIME REPORT
+    schedule.every().day.at("06:00").do(send_uptime_report)
     schedule.every().sunday.at("05:01").do(weekly_report)
     schedule.every().sunday.at("05:02").do(send_weekly_top_strategy)
 
     while True:
         schedule.run_pending()
         time.sleep(10)
-
 
 def send_weekly_top_strategy():
     try:
@@ -145,4 +140,4 @@ def send_weekly_top_strategy():
                 f"{datetime.now().strftime('%Y-%m-%d')},{top['strategy']},{top['orders']},{top['winrate']:.1f},{top['total_pnl']:.2f}\n"
             )
     except Exception as e:
-        send_telegram(f"❌ Lỗi gửi báo cáo chiến lược tuần: {e}")
+        log_error(f"❌ Lỗi gửi báo cáo chiến lược tuần: {e}")
