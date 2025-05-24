@@ -1,6 +1,7 @@
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
+from logger import log_info
 
 winrate_file = "winrate_log.json"
 
@@ -10,12 +11,16 @@ def load_winrate():
             return {}
         with open(winrate_file, 'r') as f:
             return json.load(f)
-    except:
+    except Exception as e:
+        log_info(f"Lỗi load_winrate: {e}")
         return {}
 
 def save_winrate(data):
-    with open(winrate_file, 'w') as f:
-        json.dump(data, f)
+    try:
+        with open(winrate_file, 'w') as f:
+            json.dump(data, f)
+    except Exception as e:
+        log_info(f"Lỗi save_winrate: {e}")
 
 def update_winrate(symbol, strategy, result):  # result: 1 thắng, 0 thua
     data = load_winrate()
@@ -57,3 +62,7 @@ def get_best_strategy():
         return "breakout"  # Mặc định nếu chưa có dữ liệu
     best_strategy = max(strategy_scores.items(), key=lambda x: (x[1]["win"] / x[1]["total"]) if x[1]["total"] > 0 else 0)
     return best_strategy[0]
+
+def get_best_symbols():
+    # 🆕 Hàm giả định để lấy danh sách symbol tốt nhất (có thể dùng phân tích thị trường thực tế)
+    return ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]
