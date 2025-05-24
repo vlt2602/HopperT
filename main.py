@@ -5,13 +5,13 @@ import asyncio
 import builtins
 import nest_asyncio
 from flask_app import app
-from telegram_handler import start_telegram_bot, send_summary  # 🆕 Thêm import send_summary
+from telegram_handler import start_telegram_bot, send_summary  # 🆕 Gửi tin nhắn tổng hợp Telegram
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
-from strategy_manager import check_winrate  # 🆕 Thêm kiểm tra winrate
-from trade_manager import execute_trade  # 🆕 Hàm xử lý giao dịch giả định (ví dụ)
+from strategy_manager import check_winrate  # 🆕 Kiểm tra winrate từng cặp coin
+from trade_manager import execute_trade  # 🆕 Hàm xử lý giao dịch (thực hiện lệnh)
 
-# ✅ Kích hoạt hỗ trợ vòng lặp lồng nhau (bắt buộc trên Replit, Railway)
+# ✅ Kích hoạt hỗ trợ vòng lặp lồng nhau (Replit, Railway bắt buộc)
 nest_asyncio.apply()
 
 # ✅ Khởi tạo biến toàn cục điều khiển bot
@@ -28,31 +28,36 @@ def run_scheduler_safe():
     except Exception as e:
         print(f"❌ Lỗi scheduler: {e}")
 
-# ✅ Chạy đồng thời Telegram Bot + Smart Trade Loop + kiểm tra winrate
+# ✅ Chạy đồng thời: Telegram Bot + Smart Trade + Gửi thông báo tổng hợp
 async def run_async_tasks():
     await asyncio.gather(
-        start_telegram_bot(),
-        smart_trade_loop(),
-        trade_loop_with_summary()  # 🆕 Thêm trade loop gộp báo cáo
+        start_telegram_bot(),        # Bot Telegram
+        smart_trade_loop(),          # Vòng lặp giao dịch thông minh (đã có)
+        trade_loop_with_summary()    # 🆕 Vòng lặp kiểm tra winrate + gửi tin nhắn gộp
     )
 
-# 🆕 TẠO VÒNG LẶP GIAO DỊCH VỚI THÔNG BÁO GỘP
+# 🆕 VÒNG LẶP GIAO DỊCH VỚI THÔNG BÁO GỘP TELEGRAM
 async def trade_loop_with_summary():
-    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]  # 📝 Thay bằng danh sách cặp coin thực tế
-    current_strategy = "breakout"  # 📝 Chiến lược hiện tại, có thể lấy từ config hoặc AI
+    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]  # 🔥 Danh sách cặp coin (anh có thể thay đổi)
+    current_strategy = "breakout"  # 🔥 Chiến lược hiện tại (có thể lấy từ config hoặc AI)
     while True:
         skipped_coins = []
         for symbol in symbols:
-            if check_winrate(symbol, current_strategy) < 40:
-                skipped_coins.append(symbol)
-                print(f"⏩ Bỏ qua {symbol} do winrate thấp.")
-            else:
-                await execute_trade(symbol, current_strategy)  # 📝 Thay bằng hàm xử lý giao dịch thực
+            try:
+                winrate = check_winrate(symbol, current_strategy)
+                if winrate < 40:
+                    skipped_coins.append(symbol)
+                    print(f"⏩ Bỏ qua {symbol} do winrate thấp ({winrate}%).")
+                else:
+                    await execute_trade(symbol, current_strategy)  # Thực hiện giao dịch
+            except Exception as e:
+                print(f"❌ Lỗi xử lý {symbol}: {e}")
+        # Gửi tin nhắn tổng hợp về Telegram
         send_summary(skipped_coins)
-        await asyncio.sleep(900)  # 🕒 Chờ 15 phút trước vòng tiếp theo (hoặc tuỳ chỉnh)
+        await asyncio.sleep(900)  # ⏳ Chờ 15 phút (900 giây) rồi lặp lại (anh có thể chỉnh)
 
-# ✅ Khởi chạy toàn hệ thống trong luồng riêng biệt
+# ✅ KHỞI CHẠY TOÀN HỆ THỐNG
 if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    threading.Thread(target=run_scheduler_safe).start()
-    asyncio.run(run_async_tasks())
+    threading.Thread(target=run_flask).start()            # Flask giữ server sống
+    threading.Thread(target=run_scheduler_safe).start()   # Scheduler báo cáo định kỳ
+    asyncio.run(run_async_tasks())                        # Chạy 3 tác vụ đồng thời
