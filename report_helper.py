@@ -5,7 +5,7 @@ from datetime import datetime
 import builtins
 from balance_helper import get_balance, get_used_capital
 from config import SHEET_WEBHOOK, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
-from logger import log_info, log_error
+from logger_helper import log_info, log_error
 
 # ✅ Gửi log hằng ngày lên Google Sheet
 def log_daily_report():
