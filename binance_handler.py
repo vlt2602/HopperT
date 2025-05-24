@@ -1,9 +1,9 @@
 # binance_handler.py
 
 import ccxt
-import time
+import asyncio
 from config import BINANCE_API_KEY, BINANCE_SECRET
-from logger_helper import send_telegram
+from logger import log_error
 
 # ✅ Khởi tạo kết nối Binance duy nhất có API key
 binance = ccxt.binance({
@@ -22,11 +22,11 @@ STABLE_PAIRS = [
 ]
 
 # ✅ Lọc top coin tốt nhất theo volume * biến động %
-def get_best_symbols(limit=3):
+async def get_best_symbols(limit=3):
     try:
-        markets = binance.load_markets()
+        markets = await asyncio.to_thread(binance.load_markets)
     except Exception as e:
-        send_telegram(f"❌ Lỗi load markets: {e}")
+        log_error(f"❌ Lỗi load markets: {e}")
         return []
 
     candidates = []
@@ -35,9 +35,9 @@ def get_best_symbols(limit=3):
         if symbol not in markets:
             continue
         try:
-            ohlcv = binance.fetch_ohlcv(symbol, timeframe='1h', limit=1)
-            ticker = binance.fetch_ticker(symbol)
-            time.sleep(0.2)  # tránh bị block IP
+            ohlcv = await asyncio.to_thread(binance.fetch_ohlcv, symbol, '1h', 1)
+            ticker = await asyncio.to_thread(binance.fetch_ticker, symbol)
+            await asyncio.sleep(0.2)  # tránh bị block IP
 
             if not ohlcv or 'percentage' not in ticker or ticker['percentage'] is None:
                 continue
@@ -48,7 +48,7 @@ def get_best_symbols(limit=3):
             candidates.append((symbol, score))
 
         except Exception as e:
-            print(f"⚠️ Lỗi dữ liệu {symbol}: {e}")
+            log_error(f"⚠️ Lỗi dữ liệu {symbol}: {e}")
             continue
 
     candidates.sort(key=lambda x: x[1], reverse=True)
