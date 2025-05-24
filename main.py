@@ -3,7 +3,7 @@ import asyncio
 import builtins
 import nest_asyncio
 from flask_app import app
-from telegram_handler import start_telegram_bot, send_summary, send_alert
+from telegram_handler import start_telegram_bot, send_alert  # Xoá send_summary
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
 from strategy_manager import check_winrate, get_best_strategy
@@ -31,7 +31,6 @@ async def run_async_tasks():
 async def trade_loop_with_summary():
     symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]
     while True:
-        skipped_coins = []
         try:
             current_strategy = get_best_strategy()
             print(f"🔥 Sử dụng chiến lược tốt nhất: {current_strategy}")
@@ -39,14 +38,12 @@ async def trade_loop_with_summary():
                 try:
                     winrate = check_winrate(symbol, current_strategy)
                     if winrate < 40:
-                        skipped_coins.append(symbol)
                         print(f"⏩ Bỏ qua {symbol} do winrate thấp ({winrate}%).")
                     else:
                         await execute_trade(symbol, current_strategy)
                 except Exception as e_symbol:
                     print(f"❌ Lỗi xử lý {symbol}: {e_symbol}")
                     send_alert(f"⚠️ Lỗi xử lý {symbol}: {e_symbol}")
-            send_summary(skipped_coins)
         except Exception as e_loop:
             print(f"❌ Lỗi vòng lặp trade: {e_loop}")
             send_alert(f"❌ Lỗi vòng lặp trade: {e_loop}")
