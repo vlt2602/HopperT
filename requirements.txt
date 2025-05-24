@@ -3,3 +3,4 @@ pandas>=2.2.3
 nest_asyncio>=1.6.0
 flask>=2.0
 ccxt>=4.0
+schedule>=1.1.0
