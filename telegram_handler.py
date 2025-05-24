@@ -1,4 +1,4 @@
-from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, Bot
+from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from config import TELEGRAM_TOKEN, ALLOWED_CHAT_ID
 import builtins
@@ -23,15 +23,16 @@ def send_alert(message):
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
+    # Thông báo menu mini app đã bị xoá
     await update.message.reply_text("📋 Menu mini app đã bị xoá toàn bộ nút lệnh.")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.callback_query.answer()
-    await update.callback_query.edit_message_text("⚠️ Không có lệnh nào khả dụng.")
+    await update.callback_query.edit_message_text("⚠️ Hiện tại không có lệnh khả dụng.")
 
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("menu", menu))
     app.add_handler(CallbackQueryHandler(button_handler))
-    print("✅ Bot Telegram chạy...")
+    print("✅ Bot Telegram đang chạy...")
     await app.run_polling()
