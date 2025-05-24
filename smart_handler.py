@@ -3,7 +3,7 @@ import builtins
 import pandas as pd
 from binance_handler import binance, get_best_symbols
 from price_watcher import monitor_price_and_sell
-from logger import log_error, log_info
+from logger_helper import log_info, log_error
 from strategy_logger import log_to_sheet
 from ai_strategy import select_timeframe
 from market_classifier import classify_market_state
