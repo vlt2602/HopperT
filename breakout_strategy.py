@@ -3,7 +3,7 @@
 import time
 import builtins
 from config import FIXED_USDT_PER_ORDER
-from logger_helper import send_telegram
+from logger import log_info, log_error
 from strategy_logger import log_to_sheet, log_strategy
 from binance_handler import binance
 from price_watcher import monitor_price_and_sell
@@ -20,7 +20,7 @@ def is_breakout(symbol):
 
         return current_close > max(highs) and (current_close - avg_high) / avg_high > 0.01
     except Exception as e:
-        send_telegram(f"❌ Lỗi kiểm tra breakout {symbol}: {e}")
+        log_error(f"❌ Lỗi kiểm tra breakout {symbol}: {e}")
         return False
 
 # ✅ Chiến lược vào lệnh breakout thực tế
@@ -34,7 +34,7 @@ def run_breakout_strategy(strategy_name="breakout"):
             amount_usdt = min(FIXED_USDT_PER_ORDER, capital_limit, balance)
 
             if amount_usdt < MIN_NOTIONAL:
-                send_telegram(f"⚠️ Không đủ USDT để trade {symbol}. Bỏ qua.")
+                log_info(f"⚠️ Không đủ USDT để trade {symbol}. Bỏ qua.")
                 continue
 
             if is_breakout(symbol):
@@ -43,7 +43,7 @@ def run_breakout_strategy(strategy_name="breakout"):
                 qty = round(amount_usdt / price, 5)
 
                 binance.create_market_buy_order(symbol, qty)
-                send_telegram(f"🚀 Breakout Signal! Mua {symbol} {qty} tại {price:.2f}")
+                log_info(f"🚀 Breakout Signal! Mua {symbol} {qty} tại {price:.2f}")
                 log_to_sheet(symbol, "BUY", qty, price, strategy_name, "pending", 0)
                 builtins.capital_limit -= amount_usdt
 
@@ -51,7 +51,7 @@ def run_breakout_strategy(strategy_name="breakout"):
                 time.sleep(2)
 
         except Exception as e:
-            send_telegram(f"❌ Breakout lỗi {symbol}: {e}")
+            log_error(f"❌ Breakout lỗi {symbol}: {e}")
 
 # ✅ Tín hiệu breakout: close gần đỉnh cao nhất 6 nến
 def check_breakout_signal(df):
@@ -62,5 +62,5 @@ def check_breakout_signal(df):
         recent_close = closes[-1]
         return recent_close >= 0.98 * recent_high
     except Exception as e:
-        print(f"[Lỗi breakout_signal]: {e}")
+        log_error(f"❌ Lỗi breakout_signal: {e}")
         return False
