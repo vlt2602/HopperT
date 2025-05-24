@@ -3,7 +3,6 @@ import asyncio
 import builtins
 import nest_asyncio
 from flask_app import app
-from telegram_handler import start_telegram_bot, send_alert  # Xoá send_summary
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
 from strategy_manager import check_winrate, get_best_strategy
@@ -23,7 +22,6 @@ def run_scheduler_safe():
 
 async def run_async_tasks():
     await asyncio.gather(
-        start_telegram_bot(),
         smart_trade_loop(),
         trade_loop_with_summary()
     )
@@ -43,10 +41,8 @@ async def trade_loop_with_summary():
                         await execute_trade(symbol, current_strategy)
                 except Exception as e_symbol:
                     print(f"❌ Lỗi xử lý {symbol}: {e_symbol}")
-                    send_alert(f"⚠️ Lỗi xử lý {symbol}: {e_symbol}")
         except Exception as e_loop:
             print(f"❌ Lỗi vòng lặp trade: {e_loop}")
-            send_alert(f"❌ Lỗi vòng lặp trade: {e_loop}")
         await asyncio.sleep(900)
 
 if __name__ == "__main__":
