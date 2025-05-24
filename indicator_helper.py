@@ -1,6 +1,6 @@
 # indicator_helper.py
 
-from logger import log_error
+from logger_helper import log_info, log_error
 
 def calculate_rsi(prices, period=14):
     try:
