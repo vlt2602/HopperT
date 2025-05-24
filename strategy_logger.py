@@ -4,7 +4,7 @@ import csv
 from datetime import datetime
 from config import USE_GOOGLE_SHEET, SHEET_WEBHOOK
 import requests
-from logger import log_error, log_info
+from logger_helper import log_error, log_info
 
 def log_to_sheet(symbol,
                  side,
