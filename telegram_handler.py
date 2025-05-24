@@ -1,4 +1,4 @@
-from telegram import Update, ReplyKeyboardMarkup
+from telegram import Update, ReplyKeyboardMarkup, Bot
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, ContextTypes
 )
@@ -15,6 +15,23 @@ builtins.capital_limit = 500
 builtins.capital_limit_init = 500
 builtins.bot_active = True
 builtins.last_order = None
+
+# 👉 BỔ SUNG GỬI CẢNH BÁO VÀ GỘP THÔNG BÁO
+bot = Bot(token=TELEGRAM_TOKEN)
+
+def send_alert(message):
+    try:
+        bot.send_message(chat_id=ALLOWED_CHAT_ID, text=message)
+    except Exception as e:
+        print(f"❌ Lỗi gửi tin Telegram: {e}")
+
+def send_summary(skipped_coins):
+    if skipped_coins:
+        coins_list = ', '.join(skipped_coins)
+        message = f"🚫 Bỏ qua các cặp coin do winrate thấp: {coins_list}"
+        send_alert(message)
+
+# =========================== CÁC HÀM XỬ LÝ LỆNH ============================
 
 async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_chat.id != ALLOWED_CHAT_ID: return
