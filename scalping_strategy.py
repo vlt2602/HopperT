@@ -1,11 +1,13 @@
 # scalping_strategy.py
 
+from logger import log_error
 
 def check_scalping_signal(df):
-    # Tín hiệu scalping đơn giản: giá biến động mạnh trong 3 nến gần nhất
-    closes = df['close'].tolist()
-    recent = closes[-4:]
-    volatility = max(recent) - min(recent)
-
-    # Nếu biến động > 1.5% giá → cho là có cơ hội scalping
-    return volatility / recent[-1] > 0.015
+    try:
+        closes = df['close'].tolist()
+        recent = closes[-4:]
+        volatility = max(recent) - min(recent)
+        return volatility / recent[-1] > 0.015
+    except Exception as e:
+        log_error(f"❌ Lỗi check_scalping_signal: {e}")
+        return False
