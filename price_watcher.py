@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import asyncio
 import pandas as pd
 from binance_handler import binance
-from logger import log_info, log_error
+from logger_helper import log_info, log_error
 from strategy_logger import log_to_sheet, log_strategy
 from market_classifier import classify_market_state
 
