@@ -1,11 +1,13 @@
-# strategy_manager.py
 import json
 from datetime import datetime, timedelta
+import os
 
 winrate_file = "winrate_log.json"
 
 def load_winrate():
     try:
+        if not os.path.exists(winrate_file):
+            return {}
         with open(winrate_file, 'r') as f:
             return json.load(f)
     except:
@@ -38,3 +40,20 @@ def get_next_strategy(current_strategy):
     strategies = ["breakout", "vwap", "reversal", "macd"]
     idx = strategies.index(current_strategy)
     return strategies[(idx + 1) % len(strategies)]
+
+def get_best_strategy():
+    data = load_winrate()
+    strategy_scores = {}
+    for key, value in data.items():
+        strategy = key.split("_")[1]
+        total = value["total"]
+        winrate = (value["win"] / total) * 100 if total > 0 else 0
+        if strategy not in strategy_scores:
+            strategy_scores[strategy] = {"win": value["win"], "total": total}
+        else:
+            strategy_scores[strategy]["win"] += value["win"]
+            strategy_scores[strategy]["total"] += total
+    if not strategy_scores:
+        return "breakout"  # Mặc định nếu chưa có dữ liệu
+    best_strategy = max(strategy_scores.items(), key=lambda x: (x[1]["win"] / x[1]["total"]) if x[1]["total"] > 0 else 0)
+    return best_strategy[0]
