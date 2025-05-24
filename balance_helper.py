@@ -3,7 +3,7 @@
 import builtins
 from config import CAPITAL_LIMIT
 from binance_handler import binance
-from logger import log_error
+from logger_helper import log_info, log_error
 
 # ✅ Biến khởi tạo ban đầu
 builtins.capital_limit_init = CAPITAL_LIMIT
