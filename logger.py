@@ -3,7 +3,10 @@
 import requests
 import csv
 from datetime import datetime
-from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, SHEET_WEBHOOK, USE_GOOGLE_SHEET
+from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID, USE_GOOGLE_SHEET
+
+# ✅ Đặt webhook URL mới (link Google Apps Script đã tạo)
+SHEET_WEBHOOK = "https://script.google.com/macros/s/AKfycbxi3W8SK9HMOJicjTvka9HCxvPC17HPWKpwFGa6MDT9KCqZsRyUMDoq1M_oa9GZV_LTSQ/exec"
 
 # ✅ Ghi lệnh mua/bán lên Google Sheet (nếu bật USE_GOOGLE_SHEET)
 def log_to_sheet(symbol, side, qty, price, strategy, result, pnl):
@@ -19,7 +22,11 @@ def log_to_sheet(symbol, side, qty, price, strategy, result, pnl):
                 "Result": result,
                 "PnL": pnl
             }
-            requests.post(SHEET_WEBHOOK, json=payload)
+            response = requests.post(SHEET_WEBHOOK, json=payload)
+            if response.status_code == 200:
+                print(f"📈 Đã gửi log lên Google Sheet: {symbol}, {strategy}, {result}, {pnl}")
+            else:
+                print(f"❌ Lỗi gửi log: {response.text}")
         except Exception as e:
             print("❌ Lỗi gửi dữ liệu lên Google Sheets:", e)
 
