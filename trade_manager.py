@@ -1,6 +1,8 @@
 from capital_manager import adjust_capital, get_base_capital
 import builtins
 from strategy_manager import update_winrate  # 🆕 Bổ sung để tự học winrate
+from logger_helper import send_telegram
+from logger import log_error, log_info
 
 error_count = 0
 MAX_ERRORS = 3
@@ -18,8 +20,7 @@ async def execute_trade(symbol, strategy):
         capital_to_use = adjust_capital(symbol, strategy, base_capital)
 
         if builtins.bot_active:
-            # 🔥 Thực hiện lệnh (giả lập hoặc thực tế)
-            print(f"💰 Đặt lệnh {symbol} với {capital_to_use:.2f} USDT theo chiến lược {strategy}")
+            log_info(f"💰 Đặt lệnh {symbol} với {capital_to_use:.2f} USDT theo chiến lược {strategy}")
             
             # 📝 TÍNH KẾT QUẢ GIẢ LẬP (pnl)
             import random
@@ -30,12 +31,12 @@ async def execute_trade(symbol, strategy):
 
             error_count = 0  # Reset lỗi nếu lệnh thành công
         else:
-            print(f"⏸ Bot đang dừng, bỏ qua giao dịch {symbol}")
+            log_info(f"⏸ Bot đang dừng, bỏ qua giao dịch {symbol}")
 
     except Exception as e:
         error_count += 1
-        print(f"❌ Lỗi execute_trade {symbol}: {e}")
+        log_error(f"Lỗi execute_trade {symbol}: {e}")
 
         if error_count >= MAX_ERRORS:
             builtins.bot_active = False
-            print("🚨 Bot tự động dừng do lỗi liên tiếp!")
+            log_error("🚨 Bot tự động dừng do lỗi liên tiếp!")
