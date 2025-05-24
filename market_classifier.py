@@ -1,5 +1,5 @@
 # market_classifier.py
-from logger import log_info, log_error
+from logger_helper import log_info, log_error
 
 def classify_market_state(df):
     try:
