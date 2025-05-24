@@ -1,17 +1,12 @@
 # logger_helper.py
 
-import requests
+from telegram import Bot
 from config import TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+
+bot = Bot(token=TELEGRAM_TOKEN)
 
 def send_telegram(message):
     try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-        data = {
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message
-        }
-        response = requests.post(url, data=data)
-        if response.status_code != 200:
-            print("⚠️ Telegram API lỗi:", response.text)
+        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=message)
     except Exception as e:
-        print("❌ Lỗi gửi Telegram:", e)
+        print(f"❌ Lỗi gửi Telegram: {e}")
