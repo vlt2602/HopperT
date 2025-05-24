@@ -1,16 +1,17 @@
-# flask_app.py
+# keep_alive.py
 
-from flask import Flask
+from quart import Quart
 from threading import Thread
 
-app = Flask("HopperT")
+app = Quart("HopperT")
 
 @app.route('/')
-def home():
+async def home():
     return "✅ HopperT đang hoạt động ổn định!"
 
 def run():
-    app.run(host='0.0.0.0', port=8080)
+    import asyncio
+    asyncio.run(app.run_task(host='0.0.0.0', port=8080))
 
 def keep_alive():
     t = Thread(target=run)
