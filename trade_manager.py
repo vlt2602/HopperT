@@ -1,6 +1,5 @@
 from capital_manager import adjust_capital, get_base_capital
 import builtins
-from telegram_handler import send_alert
 from strategy_manager import update_winrate  # 🆕 Bổ sung để tự học winrate
 
 error_count = 0
@@ -36,8 +35,7 @@ async def execute_trade(symbol, strategy):
     except Exception as e:
         error_count += 1
         print(f"❌ Lỗi execute_trade {symbol}: {e}")
-        send_alert(f"⚠️ Lỗi xử lý lệnh {symbol}: {e}")
 
         if error_count >= MAX_ERRORS:
             builtins.bot_active = False
-            send_alert("🚨 Bot tự động dừng do lỗi liên tiếp!")
+            print("🚨 Bot tự động dừng do lỗi liên tiếp!")
