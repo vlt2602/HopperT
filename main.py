@@ -7,6 +7,7 @@ from report_scheduler import run_scheduler
 from strategy_manager import check_winrate, get_best_strategy
 from trade_manager import execute_trade
 from logger_helper import log_error, log_info
+from binance_handler import get_best_symbols
 
 app = Quart(__name__)
 builtins.bot_active = True
