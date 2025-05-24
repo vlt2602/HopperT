@@ -2,6 +2,7 @@
 
 from strategy_manager import check_winrate
 import builtins
+from logger import log_info, log_error
 
 def adjust_capital(symbol, strategy, base_capital):
     """
@@ -12,16 +13,16 @@ def adjust_capital(symbol, strategy, base_capital):
     try:
         winrate = check_winrate(symbol, strategy)
         if winrate > 70:
-            print(f"🚀 Winrate cao {winrate}%, tăng vốn.")
+            log_info(f"🚀 Winrate cao {winrate}%, tăng vốn.")
             return base_capital * 1.5  # Tăng vốn 1.5 lần
         elif winrate < 30:
-            print(f"⚠️ Winrate thấp {winrate}%, giảm vốn.")
+            log_info(f"⚠️ Winrate thấp {winrate}%, giảm vốn.")
             return base_capital * 0.5  # Giảm vốn còn 0.5 lần
         else:
-            print(f"🔍 Winrate ổn định {winrate}%, giữ vốn gốc.")
+            log_info(f"🔍 Winrate ổn định {winrate}%, giữ vốn gốc.")
             return base_capital
     except Exception as e:
-        print(f"❌ Lỗi tính vốn {symbol}: {e}")
+        log_error(f"❌ Lỗi tính vốn {symbol}: {e}")
         return base_capital
 
 def get_base_capital():
