@@ -1,5 +1,5 @@
 from indicator_helper import calculate_rsi
-from logger import log_error
+from logger_helper import log_info, log_error
 
 def check_rsi_signal(df):
     try:
