@@ -1,4 +1,3 @@
-HEAD
 import threading
 import asyncio
 import builtins
