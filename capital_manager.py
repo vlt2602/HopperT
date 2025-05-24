@@ -2,7 +2,7 @@
 
 from strategy_manager import check_winrate
 import builtins
-from logger import log_info, log_error
+from logger_helper import log_info, log_error
 
 def adjust_capital(symbol, strategy, base_capital):
     """
