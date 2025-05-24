@@ -6,27 +6,21 @@ from flask_app import app
 from telegram_handler import start_telegram_bot, send_summary, send_alert
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
-from strategy_manager import check_winrate, get_best_strategy  # 🆕 Bổ sung get_best_strategy
+from strategy_manager import check_winrate, get_best_strategy
 from trade_manager import execute_trade
 
-# ✅ Kích hoạt hỗ trợ vòng lặp lồng nhau
 nest_asyncio.apply()
-
-# ✅ Khởi tạo biến toàn cục
 builtins.bot_active = True
 
-# ✅ Chạy Flask giữ server sống
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
-# ✅ Scheduler báo cáo định kỳ
 def run_scheduler_safe():
     try:
         run_scheduler()
     except Exception as e:
         print(f"❌ Lỗi scheduler: {e}")
 
-# ✅ Chạy đồng thời: Telegram Bot + Smart Trade + Vòng lặp trade
 async def run_async_tasks():
     await asyncio.gather(
         start_telegram_bot(),
@@ -34,13 +28,12 @@ async def run_async_tasks():
         trade_loop_with_summary()
     )
 
-# 🆕 VÒNG LẶP GIAO DỊCH VỚI XỬ LÝ FALLBACK, THÔNG BÁO GỘP VÀ TỰ HỌC CHIẾN LƯỢC
 async def trade_loop_with_summary():
-    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]  # 🔥 Danh sách cặp coin
+    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]
     while True:
         skipped_coins = []
         try:
-            current_strategy = get_best_strategy()  # 🆕 Chọn chiến lược tốt nhất
+            current_strategy = get_best_strategy()
             print(f"🔥 Sử dụng chiến lược tốt nhất: {current_strategy}")
             for symbol in symbols:
                 try:
@@ -59,7 +52,6 @@ async def trade_loop_with_summary():
             send_alert(f"❌ Lỗi vòng lặp trade: {e_loop}")
         await asyncio.sleep(900)
 
-# ✅ KHỞI CHẠY TOÀN HỆ THỐNG
 if __name__ == "__main__":
     threading.Thread(target=run_flask).start()
     threading.Thread(target=run_scheduler_safe).start()
