@@ -63,4 +63,3 @@ nest_asyncio.apply()
 
 # Khởi chạy bot Telegram
 asyncio.get_event_loop().run_until_complete(start_telegram_bot())
-5a8f10b (Update telegram_handler.py với menu inline mới)
