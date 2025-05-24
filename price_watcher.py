@@ -1,10 +1,10 @@
 # price_watcher.py
 
 from datetime import datetime, timedelta
-import time
+import asyncio
 import pandas as pd
 from binance_handler import binance
-from logger_helper import send_telegram
+from logger import log_info, log_error
 from strategy_logger import log_to_sheet, log_strategy
 from market_classifier import classify_market_state
 
@@ -20,13 +20,13 @@ def calculate_atr(symbol):
         trs = [abs(c[2] - c[3]) for c in ohlcv[-14:]]
         return sum(trs) / len(trs)
     except Exception as e:
-        send_telegram(f"❌ Lỗi tính ATR {symbol}: {e}")
+        log_error(f"Lỗi tính ATR {symbol}: {e}")
         return 0.0
 
-def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
+async def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
     atr = calculate_atr(symbol)
     if atr == 0:
-        send_telegram(f"⚠️ Bỏ qua theo dõi {symbol} do ATR lỗi.")
+        log_info(f"⚠️ Bỏ qua theo dõi {symbol} do ATR lỗi.")
         return
 
     sl_price = entry_price - SL_MULTIPLIER * atr
@@ -34,35 +34,33 @@ def monitor_price_and_sell(symbol, qty, entry_price, strategy="auto"):
     trailing_active = False
     trailing_sl = None
 
-    send_telegram(f"📉 Theo dõi {symbol} – SL: {sl_price:.2f} | TP: {tp_price:.2f}")
+    log_info(f"📉 Theo dõi {symbol} – SL: {sl_price:.2f} | TP: {tp_price:.2f}")
     start_time = datetime.now()
 
     while (datetime.now() - start_time) < timedelta(minutes=5):
         try:
-            price = binance.fetch_ticker(symbol)['last']
-            ohlcv = binance.fetch_ohlcv(symbol, timeframe=TIMEFRAME, limit=50)
+            price = (await asyncio.to_thread(binance.fetch_ticker, symbol))['last']
+            ohlcv = await asyncio.to_thread(binance.fetch_ohlcv, symbol, TIMEFRAME, 50)
             df = pd.DataFrame(ohlcv, columns=["timestamp", "open", "high", "low", "close", "volume"])
             market_state = classify_market_state(df)
 
-            # Kích hoạt trailing stop nếu đạt đủ ngưỡng lợi nhuận
             if not trailing_active and price >= entry_price + (TP_MULTIPLIER * atr * TRAILING_TRIGGER):
                 trailing_active = True
                 trailing_sl = price - atr * 0.8
-                send_telegram(f"🔁 Trailing Stop kích hoạt tại {price:.2f}")
+                log_info(f"🔁 Trailing Stop kích hoạt tại {price:.2f}")
 
-            # Điều kiện chốt lệnh: TP / SL / trailing SL
             if (trailing_active and price <= trailing_sl) or price >= tp_price or price <= sl_price:
                 result = "win" if price >= tp_price or (trailing_active and price <= trailing_sl) else "loss"
                 pnl = round((price - entry_price) * qty, 2)
 
-                binance.create_market_sell_order(symbol, qty)
-                send_telegram(f"{'🟢' if result == 'win' else '🔴'} Đã bán {symbol} tại {price:.2f} | PnL: {pnl:.2f} USDT")
+                await asyncio.to_thread(binance.create_market_sell_order, symbol, qty)
+                log_info(f"{'🟢' if result == 'win' else '🔴'} Đã bán {symbol} tại {price:.2f} | PnL: {pnl:.2f} USDT")
                 log_to_sheet(symbol, "SELL", qty, price, strategy, result, pnl)
                 log_strategy(symbol, strategy, result, pnl, market_state)
                 return
 
-            time.sleep(10)
+            await asyncio.sleep(10)
 
         except Exception as e:
-            send_telegram(f"❌ Lỗi theo dõi giá {symbol}: {e}")
-            time.sleep(5)
+            log_error(f"❌ Lỗi theo dõi giá {symbol}: {e}")
+            await asyncio.sleep(5)
