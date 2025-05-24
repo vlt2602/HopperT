@@ -5,6 +5,7 @@ from datetime import datetime
 import builtins
 from balance_helper import get_balance, get_used_capital
 from config import SHEET_WEBHOOK, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+from logger import log_info, log_error
 
 # ✅ Gửi log hằng ngày lên Google Sheet
 def log_daily_report():
@@ -19,11 +20,11 @@ def log_daily_report():
         }
         if SHEET_WEBHOOK:
             requests.post(SHEET_WEBHOOK, json=data)
-            print("📤 Gửi báo cáo vốn hằng ngày lên Google Sheets.")
+            log_info("📤 Đã gửi báo cáo vốn hằng ngày lên Google Sheets.")
         else:
-            print("⚠️ SHEET_WEBHOOK chưa được cấu hình.")
+            log_error("⚠️ SHEET_WEBHOOK chưa được cấu hình.")
     except Exception as e:
-        print("❌ Lỗi gửi báo cáo vốn:", e)
+        log_error(f"❌ Lỗi gửi báo cáo vốn: {e}")
 
 # ✅ Gửi báo cáo về Telegram 06:00 sáng
 def send_uptime_report():
@@ -49,8 +50,8 @@ def send_uptime_report():
                 "parse_mode": "Markdown"
             }
             requests.post(url, data=data)
-            print("✅ Đã gửi báo cáo uptime về Telegram.")
+            log_info("✅ Đã gửi báo cáo uptime về Telegram.")
         else:
-            print("⚠️ TELEGRAM_TOKEN hoặc TELEGRAM_CHAT_ID chưa cấu hình.")
+            log_error("⚠️ TELEGRAM_TOKEN hoặc TELEGRAM_CHAT_ID chưa cấu hình.")
     except Exception as e:
-        print("❌ Lỗi gửi báo cáo uptime:", e)
+        log_error(f"❌ Lỗi gửi báo cáo uptime: {e}")
