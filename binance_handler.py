@@ -1,7 +1,7 @@
 # binance_handler.py
 
 import ccxt
-import asyncio
+import time
 from config import BINANCE_API_KEY, BINANCE_SECRET
 from logger import log_error
 
@@ -24,7 +24,7 @@ STABLE_PAIRS = [
 # ✅ Lọc top coin tốt nhất theo volume * biến động %
 def get_best_symbols(limit=3):
     try:
-        markets = await asyncio.to_thread(binance.load_markets)
+        markets = binance.load_markets()
     except Exception as e:
         log_error(f"❌ Lỗi load markets: {e}")
         return []
@@ -35,9 +35,9 @@ def get_best_symbols(limit=3):
         if symbol not in markets:
             continue
         try:
-            ohlcv = await asyncio.to_thread(binance.fetch_ohlcv, symbol, '1h', 1)
-            ticker = await asyncio.to_thread(binance.fetch_ticker, symbol)
-            await asyncio.sleep(0.2)  # tránh bị block IP
+            ohlcv = binance.fetch_ohlcv(symbol, '1h', 1)
+            ticker = binance.fetch_ticker(symbol)
+            time.sleep(0.2)  # tránh bị block IP
 
             if not ohlcv or 'percentage' not in ticker or ticker['percentage'] is None:
                 continue
