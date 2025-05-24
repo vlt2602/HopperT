@@ -14,6 +14,7 @@ from binance_handler import binance
 RAILWAY_PROJECT_ID = "5703e57e-7abb-45df-8083-eb5880ecf314"
 RAILWAY_API_TOKEN = "f6a7092e-efa2-4b87-abab-319e3912d231"
 
+# Biến toàn cục
 builtins.panic_mode = False
 builtins.loss_streak = 0
 builtins.capital_limit = 500
@@ -85,11 +86,9 @@ async def capital(update, context):
                     price, equiv = 0, 0
                 total_usdt += equiv
                 details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
-
     allowed = builtins.capital_limit
     used = get_used_capital()
     remaining = allowed - used
-
     message = (
         f"💰 *TỔNG SỐ DƯ BINANCE*\n"
         f"• Tổng giá trị: ~{total_usdt:.2f} USDT\n"
@@ -137,7 +136,9 @@ async def checklogs(update, context):
     else:
         await update.effective_chat.send_message(f"❌ Lỗi gọi API Railway: {response.status_code}")
 
-# todayorders, report24h, reportall giữ nguyên như trước
+async def todayorders(update, context): await update.effective_chat.send_message("📋 Danh sách lệnh hôm nay: (chưa triển khai)")
+async def report24h(update, context): await update.effective_chat.send_message("📊 Báo cáo 24h: (chưa triển khai)")
+async def reportall(update, context): await update.effective_chat.send_message("📊 Báo cáo tổng: (chưa triển khai)")
 
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
