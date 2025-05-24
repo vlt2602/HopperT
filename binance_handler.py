@@ -3,7 +3,7 @@
 import ccxt
 import time
 from config import BINANCE_API_KEY, BINANCE_SECRET
-from logger import log_error
+from logger_helper import log_error
 
 # ✅ Khởi tạo kết nối Binance duy nhất có API key
 binance = ccxt.binance({
