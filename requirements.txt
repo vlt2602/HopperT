@@ -1,5 +1,5 @@
 python-telegram-bot==20.6
-<<<<<<< HEAD
+HEAD
 ccxt>=4.4.82
 flask>=3.1.1
 nest-asyncio>=1.6.0
@@ -7,7 +7,6 @@ pandas>=2.2.3
 requests>=2.32.3
 schedule>=1.2.2
 waitress>=3.0.2
-=======
 pandas>=2.2.3
 nest_asyncio>=1.6.0
->>>>>>> 5a8f10b (Update telegram_handler.py với menu inline mới)
+5a8f10b (Update telegram_handler.py với menu inline mới)
