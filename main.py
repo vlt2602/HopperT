@@ -1,27 +1,25 @@
-# main.py
-
 import threading
 import asyncio
 import builtins
 import nest_asyncio
 from flask_app import app
-from telegram_handler import start_telegram_bot, send_summary, send_alert  # 🆕 Gửi tin nhắn tổng hợp và cảnh báo Telegram
+from telegram_handler import start_telegram_bot, send_summary, send_alert
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
-from strategy_manager import check_winrate  # 🆕 Kiểm tra winrate từng cặp coin
-from trade_manager import execute_trade  # 🆕 Hàm xử lý giao dịch (thực hiện lệnh)
+from strategy_manager import check_winrate, get_best_strategy  # 🆕 Bổ sung get_best_strategy
+from trade_manager import execute_trade
 
-# ✅ Kích hoạt hỗ trợ vòng lặp lồng nhau (Replit, Railway bắt buộc)
+# ✅ Kích hoạt hỗ trợ vòng lặp lồng nhau
 nest_asyncio.apply()
 
-# ✅ Khởi tạo biến toàn cục điều khiển bot
+# ✅ Khởi tạo biến toàn cục
 builtins.bot_active = True
 
-# ✅ Chạy Flask giữ server sống (cổng 8080)
+# ✅ Chạy Flask giữ server sống
 def run_flask():
     app.run(host='0.0.0.0', port=8080)
 
-# ✅ Scheduler Telegram báo cáo định kỳ
+# ✅ Scheduler báo cáo định kỳ
 def run_scheduler_safe():
     try:
         run_scheduler()
@@ -36,13 +34,14 @@ async def run_async_tasks():
         trade_loop_with_summary()
     )
 
-# 🆕 VÒNG LẶP GIAO DỊCH VỚI XỬ LÝ FALLBACK VÀ THÔNG BÁO GỘP
+# 🆕 VÒNG LẶP GIAO DỊCH VỚI XỬ LÝ FALLBACK, THÔNG BÁO GỘP VÀ TỰ HỌC CHIẾN LƯỢC
 async def trade_loop_with_summary():
-    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]  # 🔥 Danh sách cặp coin (có thể thay đổi)
-    current_strategy = "breakout"  # 🔥 Chiến lược hiện tại
+    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]  # 🔥 Danh sách cặp coin
     while True:
         skipped_coins = []
         try:
+            current_strategy = get_best_strategy()  # 🆕 Chọn chiến lược tốt nhất
+            print(f"🔥 Sử dụng chiến lược tốt nhất: {current_strategy}")
             for symbol in symbols:
                 try:
                     winrate = check_winrate(symbol, current_strategy)
@@ -54,11 +53,11 @@ async def trade_loop_with_summary():
                 except Exception as e_symbol:
                     print(f"❌ Lỗi xử lý {symbol}: {e_symbol}")
                     send_alert(f"⚠️ Lỗi xử lý {symbol}: {e_symbol}")
-            send_summary(skipped_coins)  # Gửi báo cáo tổng hợp
+            send_summary(skipped_coins)
         except Exception as e_loop:
             print(f"❌ Lỗi vòng lặp trade: {e_loop}")
             send_alert(f"❌ Lỗi vòng lặp trade: {e_loop}")
-        await asyncio.sleep(900)  # ⏳ Chờ 15 phút trước vòng lặp tiếp theo
+        await asyncio.sleep(900)
 
 # ✅ KHỞI CHẠY TOÀN HỆ THỐNG
 if __name__ == "__main__":
