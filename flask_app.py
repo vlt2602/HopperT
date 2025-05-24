@@ -1,13 +1,11 @@
-from flask import Flask
+from quart import Quart
 
-app = Flask(__name__)
-
+app = Quart(__name__)
 
 @app.route('/')
-def home():
-    return "✅ HopperX đang chạy!"
-
+async def home():
+    return "✅ HopperT is running!"
 
 @app.route('/healthcheck')
-def healthcheck():
-    return "✅ HopperX vẫn sống!"
+async def healthcheck():
+    return "✅ HopperT is alive and healthy!"
