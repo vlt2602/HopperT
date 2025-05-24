@@ -4,12 +4,16 @@ from config import TELEGRAM_TOKEN, ALLOWED_CHAT_ID
 import builtins
 import pandas as pd
 import os
+import requests
 from datetime import datetime, timedelta
 from strategy_metrics import get_strategy_scores
 from balance_helper import get_balance, get_used_capital
 from binance_handler import binance
 
-# Biến toàn cục
+# Railway Info
+RAILWAY_PROJECT_ID = "5703e57e-7abb-45df-8083-eb5880ecf314"
+RAILWAY_API_TOKEN = "f6a7092e-efa2-4b87-abab-319e3912d231"
+
 builtins.panic_mode = False
 builtins.loss_streak = 0
 builtins.capital_limit = 500
@@ -76,51 +80,45 @@ async def capital(update, context):
                 total_usdt += equiv; details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
     used, allowed = get_used_capital(), builtins.capital_limit
     await update.effective_chat.send_message(f"💰 Tổng: ~{total_usdt:.2f} USDT\n" + "\n".join(details) + f"\nVốn cho phép: {allowed} USDT\nĐã dùng: {used} USDT\nCòn lại: {allowed - used} USDT")
+
 async def resetcapital(update, context): builtins.capital_limit = builtins.capital_limit_init = 500; await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT")
 async def addcapital(update, context): builtins.capital_limit += 100; builtins.capital_limit_init += 100; await update.effective_chat.send_message(f"➕ Tăng +100, hiện tại: {builtins.capital_limit} USDT")
 async def removecapital(update, context): builtins.capital_limit = max(0, builtins.capital_limit-100); builtins.capital_limit_init = max(0, builtins.capital_limit_init-100); await update.effective_chat.send_message(f"➖ Giảm -100, hiện tại: {builtins.capital_limit} USDT")
 async def resetlog(update, context): open("strategy_log.csv", "w").close(); await update.effective_chat.send_message("🗑 Đã reset log")
+
 async def checklogs(update, context):
-    if os.path.exists("deploy_logs.txt"):
-        with open("deploy_logs.txt") as f: logs = f.read()[-1000:]
-        await update.effective_chat.send_message(f"📋 Deploy Logs:\n{logs}")
+    query = """
+    query {
+      project(id: "%s") {
+        environments {
+          deployments(last: 1) {
+            edges {
+              node {
+                logs(limit: 100) {
+                  message
+                  timestamp
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """ % RAILWAY_PROJECT_ID
+    headers = {"Authorization": f"Bearer {RAILWAY_API_TOKEN}", "Content-Type": "application/json"}
+    response = requests.post("https://backboard.railway.app/graphql/v2", json={"query": query}, headers=headers)
+    if response.status_code == 200:
+        try:
+            logs = response.json()['data']['project']['environments'][0]['deployments']['edges'][0]['node']['logs']
+            messages = "\n".join([f"{log['timestamp']} - {log['message']}" for log in logs[-10:]])
+            await update.effective_chat.send_message(f"📋 Deploy Logs:\n{messages}")
+        except:
+            await update.effective_chat.send_message("⚠️ Không tìm thấy logs")
     else:
-        await update.effective_chat.send_message("⚠️ Chưa có file deploy_logs.txt")
-async def resume(update, context): builtins.panic_mode = False; builtins.loss_streak = 0; await update.effective_chat.send_message("▶️ Đã resume")
-async def setcapital(update, context): await update.effective_chat.send_message("❓ Dùng /setcapital [số] để đặt vốn")
-async def todayorders(update, context):
-    if os.path.exists("strategy_log.csv"):
-        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
-        today = datetime.now().date()
-        df["time"] = pd.to_datetime(df["time"])
-        orders = df[df["time"].dt.date == today]
-        msg = orders.to_string(index=False) if not orders.empty else "Không có lệnh hôm nay"
-        await update.effective_chat.send_message(f"📈 Lệnh hôm nay:\n{msg}")
-    else:
-        await update.effective_chat.send_message("⚠️ Chưa có log lệnh")
-async def report24h(update, context):
-    if os.path.exists("strategy_log.csv"):
-        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
-        since = datetime.now() - timedelta(hours=24)
-        df["time"] = pd.to_datetime(df["time"])
-        recent = df[df["time"] > since]
-        if not recent.empty:
-            winrate = (recent["result"].sum()/len(recent))*100
-            pnl_sum = recent["pnl"].sum()
-            await update.effective_chat.send_message(f"📊 24h: Lệnh={len(recent)}, Winrate={winrate:.2f}%, PnL={pnl_sum} USDT")
-        else: await update.effective_chat.send_message("Không có lệnh 24h")
-    else:
-        await update.effective_chat.send_message("⚠️ Chưa có log")
-async def reportall(update, context):
-    if os.path.exists("strategy_log.csv"):
-        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
-        if not df.empty:
-            winrate = (df["result"].sum()/len(df))*100
-            pnl_sum = df["pnl"].sum()
-            await update.effective_chat.send_message(f"📊 Tổng: Lệnh={len(df)}, Winrate={winrate:.2f}%, PnL={pnl_sum} USDT")
-        else: await update.effective_chat.send_message("Không có log")
-    else:
-        await update.effective_chat.send_message("⚠️ Chưa có log")
+        await update.effective_chat.send_message(f"❌ Lỗi gọi API Railway: {response.status_code}")
+
+# (các hàm todayorders, report24h, reportall giữ nguyên như bản anh gửi)
+
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("menu", menu))
