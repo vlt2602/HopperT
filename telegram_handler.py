@@ -68,18 +68,38 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def status(update, context): await update.effective_chat.send_message("🟢 HopperT đang chạy" if builtins.bot_active else "🔴 HopperT đã dừng")
 async def toggle(update, context): builtins.bot_active = not builtins.bot_active; await update.effective_chat.send_message("🟢 Bot ĐANG CHẠY" if builtins.bot_active else "🔴 Bot ĐÃ DỪNG")
+
 async def capital(update, context):
     balances = binance.fetch_balance()
     total_usdt, details = 0, []
     for coin, info in balances.items():
         if (free := info['free']) > 0:
-            if coin == 'USDT': total_usdt += free; details.append(f"{coin}: {free:.2f} USDT")
+            if coin == 'USDT':
+                total_usdt += free
+                details.append(f"{coin}: {free:.2f} USDT")
             else:
-                try: price = binance.fetch_ticker(f"{coin}/USDT")['last']; equiv = free * price
-                except: price, equiv = 0, 0
-                total_usdt += equiv; details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
-    used, allowed = get_used_capital(), builtins.capital_limit
-    await update.effective_chat.send_message(f"💰 Tổng: ~{total_usdt:.2f} USDT\n" + "\n".join(details) + f"\nVốn cho phép: {allowed} USDT\nĐã dùng: {used} USDT\nCòn lại: {allowed - used} USDT")
+                try:
+                    price = binance.fetch_ticker(f"{coin}/USDT")['last']
+                    equiv = free * price
+                except:
+                    price, equiv = 0, 0
+                total_usdt += equiv
+                details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
+
+    allowed = builtins.capital_limit
+    used = get_used_capital()
+    remaining = allowed - used
+
+    message = (
+        f"💰 *TỔNG SỐ DƯ BINANCE*\n"
+        f"• Tổng giá trị: ~{total_usdt:.2f} USDT\n"
+        + "\n".join(details) + "\n\n"
+        f"💵 *VỐN ĐẦU TƯ*\n"
+        f"• Vốn tối đa cho phép: {allowed:.2f} USDT\n"
+        f"• Vốn đã sử dụng: {used:.2f} USDT\n"
+        f"• Vốn còn lại: {remaining:.2f} USDT"
+    )
+    await update.effective_chat.send_message(message, parse_mode="Markdown")
 
 async def resetcapital(update, context): builtins.capital_limit = builtins.capital_limit_init = 500; await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT")
 async def addcapital(update, context): builtins.capital_limit += 100; builtins.capital_limit_init += 100; await update.effective_chat.send_message(f"➕ Tăng +100, hiện tại: {builtins.capital_limit} USDT")
@@ -117,7 +137,7 @@ async def checklogs(update, context):
     else:
         await update.effective_chat.send_message(f"❌ Lỗi gọi API Railway: {response.status_code}")
 
-# (các hàm todayorders, report24h, reportall giữ nguyên như bản anh gửi)
+# todayorders, report24h, reportall giữ nguyên như trước
 
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
