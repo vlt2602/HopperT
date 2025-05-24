@@ -1,8 +1,7 @@
 from capital_manager import adjust_capital, get_base_capital
 import builtins
 from strategy_manager import update_winrate  # 🆕 Bổ sung để tự học winrate
-from logger_helper import send_telegram
-from logger import log_error, log_info
+from logger_helper import send_telegram, log_info, log_error
 
 error_count = 0
 MAX_ERRORS = 3
