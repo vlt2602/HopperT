@@ -3,11 +3,13 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 from config import TELEGRAM_TOKEN, ALLOWED_CHAT_ID
 import builtins
 import pandas as pd
+import os
+from datetime import datetime, timedelta
 from strategy_metrics import get_strategy_scores
 from balance_helper import get_balance, get_used_capital
 from binance_handler import binance
 
-# Khởi tạo biến toàn cục
+# Biến toàn cục
 builtins.panic_mode = False
 builtins.loss_streak = 0
 builtins.capital_limit = 500
@@ -26,12 +28,10 @@ def send_alert(message):
 def send_summary(skipped_coins):
     if skipped_coins:
         coins_list = ', '.join(skipped_coins)
-        message = f"🚫 Bỏ qua các cặp coin do winrate thấp: {coins_list}"
-        send_alert(message)
+        send_alert(f"🚫 Bỏ qua các cặp coin do winrate thấp: {coins_list}")
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_chat.id != ALLOWED_CHAT_ID:
-        return
+    if update.effective_chat.id != ALLOWED_CHAT_ID: return
     buttons = [
         [InlineKeyboardButton("📊 Status", callback_data="status"),
          InlineKeyboardButton("⚙️ Toggle", callback_data="toggle")],
@@ -54,59 +54,76 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     data = query.data
-    if data == "status": await status(update, context)
-    elif data == "toggle": await toggle(update, context)
-    elif data == "capital": await capital(update, context)
-    elif data == "resetcapital": await resetcapital(update, context)
-    elif data == "addcapital": await addcapital(update, context)
-    elif data == "removecapital": await removecapital(update, context)
-    elif data == "resetlog": await resetlog(update, context)
-    elif data == "checklogs": await checklogs(update, context)
-    elif data == "resume": await resume(update, context)
-    elif data == "setcapital": await setcapital(update, context)
-    elif data == "todayorders": await todayorders(update, context)
-    elif data == "report24h": await report24h(update, context)
-    elif data == "reportall": await reportall(update, context)
+    handlers = {
+        "status": status, "toggle": toggle, "capital": capital, "resetcapital": resetcapital,
+        "addcapital": addcapital, "removecapital": removecapital, "resetlog": resetlog,
+        "checklogs": checklogs, "resume": resume, "setcapital": setcapital,
+        "todayorders": todayorders, "report24h": report24h, "reportall": reportall
+    }
+    if data in handlers: await handlers[data](update, context)
 
 async def status(update, context): await update.effective_chat.send_message("🟢 HopperT đang chạy" if builtins.bot_active else "🔴 HopperT đã dừng")
 async def toggle(update, context): builtins.bot_active = not builtins.bot_active; await update.effective_chat.send_message("🟢 Bot ĐANG CHẠY" if builtins.bot_active else "🔴 Bot ĐÃ DỪNG")
-
 async def capital(update, context):
     balances = binance.fetch_balance()
-    total_usdt = 0
-    details = []
+    total_usdt, details = 0, []
     for coin, info in balances.items():
-        free = info['free']
-        if free > 0:
-            if coin == 'USDT':
-                total_usdt += free
-                details.append(f"{coin}: {free:.2f} USDT")
+        if (free := info['free']) > 0:
+            if coin == 'USDT': total_usdt += free; details.append(f"{coin}: {free:.2f} USDT")
             else:
-                try:
-                    price = binance.fetch_ticker(f"{coin}/USDT")['last']
-                    equiv = free * price
-                    total_usdt += equiv
-                    details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
-                except:
-                    details.append(f"{coin}: {free} (không có giá)")
-    used_cap = get_used_capital()
-    allowed = builtins.capital_limit
-    await update.effective_chat.send_message(f"💰 Tổng số dư ~{total_usdt:.2f} USDT\n" + "\n".join(details) + f"\nVốn cho phép: {allowed} USDT\nVốn đã dùng: {used_cap} USDT\nVốn còn lại: {allowed - used_cap} USDT")
-
-async def resetcapital(update, context): builtins.capital_limit = 500; builtins.capital_limit_init = 500; await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT đã được đặt lại.")
-async def addcapital(update, context): builtins.capital_limit += 100; builtins.capital_limit_init += 100; await update.effective_chat.send_message(f"➕ Tăng vốn +100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
-async def removecapital(update, context): builtins.capital_limit = max(0, builtins.capital_limit - 100); builtins.capital_limit_init = max(0, builtins.capital_limit_init - 100); await update.effective_chat.send_message(f"➖ Giảm vốn -100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
-async def resetlog(update, context): open("strategy_log.csv", "w").close(); await update.effective_chat.send_message("🗑 Đã reset log chiến lược.")
-async def checklogs(update, context): await update.effective_chat.send_message("📋 Đang kiểm tra log hệ thống... (chưa triển khai)")
-async def resume(update, context): builtins.panic_mode = False; builtins.loss_streak = 0; await update.effective_chat.send_message("▶️ Bot đã tiếp tục giao dịch.")
-async def setcapital(update, context): await update.effective_chat.send_message("❓ Dùng lệnh /setcapital [số] để đặt vốn tùy chỉnh.")
-async def todayorders(update, context): await update.effective_chat.send_message("📋 Danh sách lệnh hôm nay:\n(Chưa triển khai)")
-async def report24h(update, context): await update.effective_chat.send_message("📊 Báo cáo 24h:\n(Chưa triển khai)")
-async def reportall(update, context): await update.effective_chat.send_message("📊 Báo cáo tổng thời gian:\n(Chưa triển khai)")
-
+                try: price = binance.fetch_ticker(f"{coin}/USDT")['last']; equiv = free * price
+                except: price, equiv = 0, 0
+                total_usdt += equiv; details.append(f"{coin}: {free} (~{equiv:.2f} USDT)")
+    used, allowed = get_used_capital(), builtins.capital_limit
+    await update.effective_chat.send_message(f"💰 Tổng: ~{total_usdt:.2f} USDT\n" + "\n".join(details) + f"\nVốn cho phép: {allowed} USDT\nĐã dùng: {used} USDT\nCòn lại: {allowed - used} USDT")
+async def resetcapital(update, context): builtins.capital_limit = builtins.capital_limit_init = 500; await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT")
+async def addcapital(update, context): builtins.capital_limit += 100; builtins.capital_limit_init += 100; await update.effective_chat.send_message(f"➕ Tăng +100, hiện tại: {builtins.capital_limit} USDT")
+async def removecapital(update, context): builtins.capital_limit = max(0, builtins.capital_limit-100); builtins.capital_limit_init = max(0, builtins.capital_limit_init-100); await update.effective_chat.send_message(f"➖ Giảm -100, hiện tại: {builtins.capital_limit} USDT")
+async def resetlog(update, context): open("strategy_log.csv", "w").close(); await update.effective_chat.send_message("🗑 Đã reset log")
+async def checklogs(update, context):
+    if os.path.exists("deploy_logs.txt"):
+        with open("deploy_logs.txt") as f: logs = f.read()[-1000:]
+        await update.effective_chat.send_message(f"📋 Deploy Logs:\n{logs}")
+    else:
+        await update.effective_chat.send_message("⚠️ Chưa có file deploy_logs.txt")
+async def resume(update, context): builtins.panic_mode = False; builtins.loss_streak = 0; await update.effective_chat.send_message("▶️ Đã resume")
+async def setcapital(update, context): await update.effective_chat.send_message("❓ Dùng /setcapital [số] để đặt vốn")
+async def todayorders(update, context):
+    if os.path.exists("strategy_log.csv"):
+        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
+        today = datetime.now().date()
+        df["time"] = pd.to_datetime(df["time"])
+        orders = df[df["time"].dt.date == today]
+        msg = orders.to_string(index=False) if not orders.empty else "Không có lệnh hôm nay"
+        await update.effective_chat.send_message(f"📈 Lệnh hôm nay:\n{msg}")
+    else:
+        await update.effective_chat.send_message("⚠️ Chưa có log lệnh")
+async def report24h(update, context):
+    if os.path.exists("strategy_log.csv"):
+        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
+        since = datetime.now() - timedelta(hours=24)
+        df["time"] = pd.to_datetime(df["time"])
+        recent = df[df["time"] > since]
+        if not recent.empty:
+            winrate = (recent["result"].sum()/len(recent))*100
+            pnl_sum = recent["pnl"].sum()
+            await update.effective_chat.send_message(f"📊 24h: Lệnh={len(recent)}, Winrate={winrate:.2f}%, PnL={pnl_sum} USDT")
+        else: await update.effective_chat.send_message("Không có lệnh 24h")
+    else:
+        await update.effective_chat.send_message("⚠️ Chưa có log")
+async def reportall(update, context):
+    if os.path.exists("strategy_log.csv"):
+        df = pd.read_csv("strategy_log.csv", header=None, names=["time","symbol","strategy","result","pnl"])
+        if not df.empty:
+            winrate = (df["result"].sum()/len(df))*100
+            pnl_sum = df["pnl"].sum()
+            await update.effective_chat.send_message(f"📊 Tổng: Lệnh={len(df)}, Winrate={winrate:.2f}%, PnL={pnl_sum} USDT")
+        else: await update.effective_chat.send_message("Không có log")
+    else:
+        await update.effective_chat.send_message("⚠️ Chưa có log")
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("menu", menu))
     app.add_handler(CallbackQueryHandler(button_handler))
-    print("✅ Telegram bot đang chạy...")
+    print("✅ Bot Telegram chạy...")
     await app.run_polling()
