@@ -1,51 +1,56 @@
-import threading
 import asyncio
 import builtins
-import nest_asyncio
-from flask_app import app
+import os
+from quart import Quart
 from smart_handler import smart_trade_loop
 from report_scheduler import run_scheduler
 from strategy_manager import check_winrate, get_best_strategy
 from trade_manager import execute_trade
+from logger_helper import log_error, log_info
 
-nest_asyncio.apply()
+app = Quart(__name__)
 builtins.bot_active = True
 
-def run_flask():
-    app.run(host='0.0.0.0', port=8080)
+@app.route('/')
+async def index():
+    return 'HopperT is running!'
 
-def run_scheduler_safe():
+@app.route('/status')
+async def status():
+    return {'bot_active': builtins.bot_active}
+
+async def run_scheduler_safe():
     try:
-        run_scheduler()
+        await asyncio.to_thread(run_scheduler)
     except Exception as e:
-        print(f"❌ Lỗi scheduler: {e}")
-
-async def run_async_tasks():
-    await asyncio.gather(
-        smart_trade_loop(),
-        trade_loop_with_summary()
-    )
+        log_error(f"Lỗi scheduler: {e}")
 
 async def trade_loop_with_summary():
-    symbols = ["SHIB/USDT", "DOGE/USDT", "ADA/USDT"]
-    while True:
+    while builtins.bot_active:
         try:
+            symbols = get_best_symbols()  # Thay thế danh sách tĩnh
             current_strategy = get_best_strategy()
-            print(f"🔥 Sử dụng chiến lược tốt nhất: {current_strategy}")
+            log_info(f"Sử dụng chiến lược tốt nhất: {current_strategy}")
             for symbol in symbols:
                 try:
                     winrate = check_winrate(symbol, current_strategy)
                     if winrate < 40:
-                        print(f"⏩ Bỏ qua {symbol} do winrate thấp ({winrate}%).")
+                        log_info(f"Bỏ qua {symbol} do winrate thấp ({winrate}%).")
                     else:
                         await execute_trade(symbol, current_strategy)
                 except Exception as e_symbol:
-                    print(f"❌ Lỗi xử lý {symbol}: {e_symbol}")
+                    log_error(f"Lỗi xử lý {symbol}: {e_symbol}")
         except Exception as e_loop:
-            print(f"❌ Lỗi vòng lặp trade: {e_loop}")
+            log_error(f"Lỗi vòng lặp trade: {e_loop}")
         await asyncio.sleep(900)
 
+async def main():
+    await asyncio.gather(
+        app.run_task(host='0.0.0.0', port=int(os.getenv("PORT", 8080))),
+        run_scheduler_safe(),
+        smart_trade_loop(),
+        trade_loop_with_summary()
+    )
+
 if __name__ == "__main__":
-    threading.Thread(target=run_flask).start()
-    threading.Thread(target=run_scheduler_safe).start()
-    asyncio.run(run_async_tasks())
+    asyncio.run(main())
