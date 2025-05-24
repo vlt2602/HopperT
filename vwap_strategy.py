@@ -1,6 +1,6 @@
 # vwap_strategy.py (nâng cấp)
 
-from logger import log_error
+from logger_helper import log_info, log_error
 
 def check_vwap_signal(df):
     try:
