@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # config.py
 
 import os
@@ -27,3 +28,7 @@ SHEET_WEBHOOK = ""
 
 # 🛑 Dừng lỗ tối đa theo ngày
 DAILY_MAX_LOSS = -30  # cho phép lỗ tối đa 30 USDT/ngày
+=======
+TELEGRAM_TOKEN = "7951632552:AAFOBdhFlEW3HafWCzi6-Us0uSUkIKhM4TI"
+ALLOWED_CHAT_ID = 1291424537
+>>>>>>> 5a8f10b (Update telegram_handler.py với menu inline mới)
