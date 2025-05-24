@@ -69,10 +69,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "reportall": await reportall(update, context)
 
 async def status(update, context): await update.effective_chat.send_message("🟢 HopperT đang chạy" if builtins.bot_active else "🔴 HopperT đã dừng")
-
-async def toggle(update, context):
-    builtins.bot_active = not builtins.bot_active
-    await update.effective_chat.send_message("🟢 Bot ĐANG CHẠY" if builtins.bot_active else "🔴 Bot ĐÃ DỪNG")
+async def toggle(update, context): builtins.bot_active = not builtins.bot_active; await update.effective_chat.send_message("🟢 Bot ĐANG CHẠY" if builtins.bot_active else "🔴 Bot ĐÃ DỪNG")
 
 async def capital(update, context):
     balances = binance.fetch_balance()
@@ -96,44 +93,16 @@ async def capital(update, context):
     allowed = builtins.capital_limit
     await update.effective_chat.send_message(f"💰 Tổng số dư ~{total_usdt:.2f} USDT\n" + "\n".join(details) + f"\nVốn cho phép: {allowed} USDT\nVốn đã dùng: {used_cap} USDT\nVốn còn lại: {allowed - used_cap} USDT")
 
-async def resetcapital(update, context):
-    builtins.capital_limit = 500
-    builtins.capital_limit_init = 500
-    await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT đã được đặt lại.")
-
-async def addcapital(update, context):
-    builtins.capital_limit += 100
-    builtins.capital_limit_init += 100
-    await update.effective_chat.send_message(f"➕ Tăng vốn +100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
-
-async def removecapital(update, context):
-    builtins.capital_limit = max(0, builtins.capital_limit - 100)
-    builtins.capital_limit_init = max(0, builtins.capital_limit_init - 100)
-    await update.effective_chat.send_message(f"➖ Giảm vốn -100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
-
-async def resetlog(update, context):
-    open("strategy_log.csv", "w").close()
-    await update.effective_chat.send_message("🗑 Đã reset log chiến lược.")
-
-async def checklogs(update, context):
-    await update.effective_chat.send_message("📋 Đang kiểm tra log hệ thống... (chưa triển khai)")
-
-async def resume(update, context):
-    builtins.panic_mode = False
-    builtins.loss_streak = 0
-    await update.effective_chat.send_message("▶️ Bot đã tiếp tục giao dịch.")
-
-async def setcapital(update, context):
-    await update.effective_chat.send_message("❓ Dùng lệnh /setcapital [số] để đặt vốn tùy chỉnh.")
-
-async def todayorders(update, context):
-    await update.effective_chat.send_message("📋 Danh sách lệnh hôm nay:\n(Chưa triển khai)")
-
-async def report24h(update, context):
-    await update.effective_chat.send_message("📊 Báo cáo 24h:\n(Chưa triển khai)")
-
-async def reportall(update, context):
-    await update.effective_chat.send_message("📊 Báo cáo tổng thời gian:\n(Chưa triển khai)")
+async def resetcapital(update, context): builtins.capital_limit = 500; builtins.capital_limit_init = 500; await update.effective_chat.send_message("🔁 Vốn mặc định 500 USDT đã được đặt lại.")
+async def addcapital(update, context): builtins.capital_limit += 100; builtins.capital_limit_init += 100; await update.effective_chat.send_message(f"➕ Tăng vốn +100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
+async def removecapital(update, context): builtins.capital_limit = max(0, builtins.capital_limit - 100); builtins.capital_limit_init = max(0, builtins.capital_limit_init - 100); await update.effective_chat.send_message(f"➖ Giảm vốn -100\n👉 Vốn hiện tại: {builtins.capital_limit} USDT")
+async def resetlog(update, context): open("strategy_log.csv", "w").close(); await update.effective_chat.send_message("🗑 Đã reset log chiến lược.")
+async def checklogs(update, context): await update.effective_chat.send_message("📋 Đang kiểm tra log hệ thống... (chưa triển khai)")
+async def resume(update, context): builtins.panic_mode = False; builtins.loss_streak = 0; await update.effective_chat.send_message("▶️ Bot đã tiếp tục giao dịch.")
+async def setcapital(update, context): await update.effective_chat.send_message("❓ Dùng lệnh /setcapital [số] để đặt vốn tùy chỉnh.")
+async def todayorders(update, context): await update.effective_chat.send_message("📋 Danh sách lệnh hôm nay:\n(Chưa triển khai)")
+async def report24h(update, context): await update.effective_chat.send_message("📊 Báo cáo 24h:\n(Chưa triển khai)")
+async def reportall(update, context): await update.effective_chat.send_message("📊 Báo cáo tổng thời gian:\n(Chưa triển khai)")
 
 async def start_telegram_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
